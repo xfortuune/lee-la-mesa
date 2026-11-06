@@ -227,6 +227,7 @@ function strengthOnDry(made: MadeHand, paired: boolean): { s: Strength; why?: st
 }
 
 function boardName(c: Coordination, paired: boolean): string {
+  if (c === 'extremadamente_coordinada') return 'mesa extremadamente coordinada (se evalúa como coordinada)';
   if (c === 'coordinada') return 'mesa coordinada';
   const base = c === 'semicoordinada' ? 'mesa semicoordinada (se evalúa como seca)' : 'mesa seca';
   return paired ? `${base} y emparejada` : base;
@@ -236,7 +237,10 @@ export function evaluateHand(hole: Card[], board: Card[]): StrengthResult {
   if (hole.length !== 2) throw new Error('Se necesitan 2 cartas en mano.');
   const boardInfo = classifyBoard(board);
   const made = readMadeHand(hole, board);
-  const treatedAs = boardInfo.coordination === 'coordinada' ? 'coordinada' : 'seca';
+  const treatedAs =
+    boardInfo.coordination === 'coordinada' || boardInfo.coordination === 'extremadamente_coordinada'
+      ? 'coordinada'
+      : 'seca';
   const { s, why } =
     treatedAs === 'coordinada'
       ? strengthOnCoordinated(made, boardInfo.monotone)

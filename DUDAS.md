@@ -37,7 +37,20 @@ y la decisión provisional implementada en `src/logic/`.
 - **Decisión provisional**: se ignora la pareja de la mesa; las cartas distintas son T y 4,
   así que 33 es pareja en mano por debajo de la segunda carta → pareja baja → débil.
 
-## 5. Proyectos (color/escalera) sin completar
+## 5. Extremadamente coordinada en el flop
+
+- **Origen**: las reglas originales dicen que en el flop no puede darse (requiere 4 cartas).
+  Se ha añadido a petición del usuario con un criterio propio.
+- **Criterio**: el flop es monocolor **y** además alguna combinación válida de 2 cartas
+  (sin contar las excepciones) forma escalera. Se evalúa antes que "coordinada".
+  - Ej.: 6♠7♠8♠, K♥Q♥J♥, 9♦7♦5♦ → extremadamente coordinada.
+  - K♠Q♠2♠ (sin escalera) y A♣2♣3♣ (solo 54, excepción) → coordinada.
+- **Fuerza**: se evalúa con las reglas de mesa coordinada (monocolor): color o escalera
+  de color → muy fuerte; escalera, trío o dobles → fuerte; pareja máxima u overpair → media…
+- **Modo equilibrado**: sale el 10 % de las veces (30 % cada uno de los otros tres tipos).
+- En el turn se podrá ampliar con la definición original (proyecto completado con UNA carta).
+
+## 6. Proyectos (color/escalera) sin completar
 
 - Las reglas de fuerza solo hablan de jugadas hechas; los proyectos no suben la categoría.
   Ej.: A♥2♥ en K♥8♥6♦ → carta alta As → débil.

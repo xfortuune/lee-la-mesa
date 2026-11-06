@@ -84,6 +84,25 @@ describe('detalles de coordinación', () => {
     expect(coord('A♥7♥2♥')).toBe('coordinada');
   });
 
+  it('monocolor con escalera posible es extremadamente coordinada', () => {
+    expect(coord('6♠7♠8♠')).toBe('extremadamente_coordinada');
+    expect(coord('K♥Q♥J♥')).toBe('extremadamente_coordinada');
+    expect(coord('9♦7♦5♦')).toBe('extremadamente_coordinada');
+    expect(coord('Q♣J♣9♣')).toBe('extremadamente_coordinada');
+  });
+
+  it('monocolor sin escalera válida sigue siendo coordinada', () => {
+    expect(coord('K♠Q♠2♠')).toBe('coordinada');
+    expect(coord('9♠6♠2♠')).toBe('coordinada');
+    // 6-4-7 solo tiene escaleras de excepción
+    expect(coord('6♥4♥7♥')).toBe('coordinada');
+    expect(coord('A♣2♣3♣')).toBe('coordinada'); // solo 54, excepción
+  });
+
+  it('con escalera pero sin monocolor no es extremadamente coordinada', () => {
+    expect(coord('6♠7♠8♥')).toBe('coordinada');
+  });
+
   it('solo evalúa flops de 3 cartas por ahora', () => {
     expect(() => classifyBoard(parseCards('A♥7♥2♥3♣'))).toThrow();
   });
@@ -151,6 +170,16 @@ describe('detalles de fuerza', () => {
     expect(strength('T♣4♣', 'T♠4♥4♦')).toBe('muy_fuerte');
   });
 
+  it('en mesa extremadamente coordinada se evalúa como coordinada monocolor', () => {
+    expect(strength('9♠T♠', '6♠7♠8♠')).toBe('muy_fuerte'); // escalera de color
+    expect(strength('A♠2♠', '6♠7♠8♠')).toBe('muy_fuerte'); // color
+    expect(strength('9♥5♦', '6♠7♠8♠')).toBe('fuerte'); // escalera sin color
+    expect(strength('8♥8♦', '6♠7♠8♠')).toBe('fuerte'); // set
+    expect(strength('A♥A♦', '6♠7♠8♠')).toBe('media'); // overpair
+    expect(strength('A♥2♦', '6♠7♠8♠')).toBe('debil');
+    expect(strength('K♥2♦', '6♠7♠8♠')).toBe('nada');
+  });
+
   it('decisiones provisionales de DUDAS.md', () => {
     expect(strength('T♣2♦', 'T♠4♥4♦')).toBe('fuerte');
     expect(strength('A♣K♦', '7♠7♥7♦')).toBe('debil');
@@ -179,10 +208,18 @@ describe('reparto', () => {
     }
   });
 
-  it('el modo equilibrado reparte los tres tipos en proporción parecida', () => {
-    const counts: Record<string, number> = { coordinada: 0, semicoordinada: 0, seca: 0 };
-    for (let i = 0; i < 900; i++) counts[classifyBoard(dealBalanced().flop).coordination]++;
-    for (const n of Object.values(counts)) expect(n).toBeGreaterThan(200);
+  it('el modo equilibrado reparte los tipos según sus pesos', () => {
+    const counts: Record<string, number> = {
+      extremadamente_coordinada: 0,
+      coordinada: 0,
+      semicoordinada: 0,
+      seca: 0,
+    };
+    for (let i = 0; i < 1000; i++) counts[classifyBoard(dealBalanced().flop).coordination]++;
+    expect(counts.extremadamente_coordinada).toBeGreaterThan(50);
+    expect(counts.coordinada).toBeGreaterThan(220);
+    expect(counts.semicoordinada).toBeGreaterThan(220);
+    expect(counts.seca).toBeGreaterThan(220);
   });
 
   it('todas las manos posibles se pueden evaluar sin errores', () => {

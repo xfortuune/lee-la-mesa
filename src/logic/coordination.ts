@@ -2,13 +2,18 @@
 import { type Card, type Rank, joinEs, rankChar } from './cards';
 
 export type Coordination =
-  | 'extremadamente_coordinada' // solo posible desde el turn (4 cartas); aún no implementada
+  | 'extremadamente_coordinada'
   | 'coordinada'
   | 'semicoordinada'
   | 'seca';
 
 /** Opciones que se muestran al usuario en el flop. */
-export const FLOP_COORDINATIONS: Coordination[] = ['coordinada', 'semicoordinada', 'seca'];
+export const FLOP_COORDINATIONS: Coordination[] = [
+  'extremadamente_coordinada',
+  'coordinada',
+  'semicoordinada',
+  'seca',
+];
 
 export const COORDINATION_LABELS: Record<Coordination, string> = {
   extremadamente_coordinada: 'Extremadamente coordinada',
@@ -77,8 +82,8 @@ function suitCounts(board: Card[]): number[] {
 
 export function classifyBoard(board: Card[]): CoordinationResult {
   if (board.length !== 3) {
-    // Preparado para el turn: aquí se añadirá "extremadamente coordinada"
-    // (proyecto completado con UNA carta en mano).
+    // Preparado para el turn: allí "extremadamente coordinada" también será
+    // tener un proyecto completado con UNA carta en mano.
     throw new Error('Por ahora solo se evalúa el flop (3 cartas).');
   }
 
@@ -91,6 +96,16 @@ export function classifyBoard(board: Card[]): CoordinationResult {
   const combos = paired ? [] : straightCombos(board);
   const valid = combos.filter((c) => !STRAIGHT_EXCEPTIONS.includes(c));
   const base = { monotone, paired, flushDraw, straightCombos: combos, validStraightCombos: valid };
+
+  // 1.0 Extremadamente coordinada (criterio propio para el flop, ver DUDAS.md):
+  // monocolor y además con escalera posible.
+  if (monotone && valid.length > 0) {
+    return {
+      ...base,
+      coordination: 'extremadamente_coordinada',
+      reason: `Mesa extremadamente coordinada: es monocolor (${board[0].suit}) y además se puede tener escalera (${joinEs(valid)}); hay color, escalera e incluso escalera de color posibles.`,
+    };
+  }
 
   // 1.1 Coordinada
   if (monotone) {
