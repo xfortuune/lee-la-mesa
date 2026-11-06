@@ -3,6 +3,7 @@ import { Home } from './pages/Home';
 import { useHashRoute } from './router';
 import Calculadora from './tools/calculadora/Calculadora';
 import LeeLaMesa from './tools/lee-la-mesa/LeeLaMesa';
+import OutsTrainer from './tools/outs/OutsTrainer';
 import { APP_NAME, TOOLS } from './tools/registry';
 
 export default function App() {
@@ -18,6 +19,8 @@ export default function App() {
       return <LeeLaMesa />;
     case 'calculadora':
       return <Calculadora />;
+    case 'outs':
+      return <OutsTrainer />;
     default:
       return <Home />;
   }

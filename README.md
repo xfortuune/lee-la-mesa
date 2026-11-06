@@ -8,7 +8,7 @@ tres herramientas (las rutas usan hash: `#/lee-la-mesa`…). Se añaden en
 |---|-------------|--------|
 | 01 | Lee la mesa | Disponible |
 | 02 | Calculadora | Disponible |
-| 03 | — | Próximamente |
+| 03 | Outs | Disponible |
 
 ## 01 · Lee la mesa
 
@@ -28,6 +28,13 @@ mesa (las que no elijas se reparten al azar) y muestra para cada uno la probabil
 ganar, de empatar y su equity, además de la probabilidad de terminar con cada jugada.
 Cálculo exacto cuando hay pocas combinaciones (flop, turn) y Monte Carlo (40.000
 simulaciones) en el resto, en un Web Worker para no bloquear la interfaz.
+
+## 03 · Outs
+
+Entrenador de outs: te reparte una mano con proyecto (o con overcards, pareja…) en el flop
+o el turn y respondes cuántos outs tienes y qué probabilidad hay de ligar con la regla del
+2 y del 4. Al corregir muestra los outs agrupados, un mapa de las 52 cartas y el % exacto.
+Criterios en `DUDAS.md`.
 
 ## Características de Lee la mesa
 
@@ -56,13 +63,16 @@ npm run build    # build de producción en dist/
   - `strength.ts` — fuerza de la mano.
   - `deal.ts` — reparto normal y equilibrado.
   - `equity.ts` — evaluador de manos y cálculo de equity.
+  - `outs.ts` — conteo de outs, regla del 2 y del 4 y reparto de situaciones.
   - `*.test.ts` — tests.
 - `src/pages/Home.tsx` — página de inicio (hub).
 - `src/router.ts` — enrutado mínimo por hash.
 - `src/tools/registry.ts` — lista de herramientas del hub.
 - `src/tools/lee-la-mesa/` — interfaz de la herramienta 01.
 - `src/tools/calculadora/` — interfaz de la herramienta 02 (con su Web Worker).
-- `src/components/` — componentes compartidos (cartas).
+- `src/tools/outs/` — interfaz de la herramienta 03.
+- `src/lib/score.ts` — marcador compartido de los entrenadores.
+- `src/components/` — componentes compartidos (cartas, cabecera, piezas de los entrenadores).
 - `DUDAS.md` — casos que las reglas no cubren de forma clara y la decisión provisional tomada.
 
 Stack: Vite + React + TypeScript + Tailwind CSS. Sin backend.

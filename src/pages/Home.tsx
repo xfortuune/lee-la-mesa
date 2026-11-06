@@ -1,14 +1,13 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { loadScore } from '../tools/lee-la-mesa/storage';
+import { hitRate, loadScore } from '../lib/score';
 import { APP_NAME, TOOLS, type Tool, toolHref } from '../tools/registry';
 
 /** Resumen corto del progreso de cada herramienta, si tiene. */
 function toolStats(tool: Tool): ReactNode {
-  if (tool.id !== 'lee-la-mesa') return null;
-  const s = loadScore();
-  const total = s.hits + s.misses;
-  if (total === 0) return null;
-  const pct = Math.round((s.hits / total) * 100);
+  if (!tool.scoreKey) return null;
+  const s = loadScore(tool.scoreKey);
+  if (s.hits + s.misses === 0) return null;
+  const pct = hitRate(s);
   return (
     <div className="flex gap-4 font-mono text-[11px] uppercase tracking-[0.15em] text-slate-500">
       <span>

@@ -54,3 +54,38 @@ y la decisión provisional implementada en `src/logic/`.
 
 - Las reglas de fuerza solo hablan de jugadas hechas; los proyectos no suben la categoría.
   Ej.: A♥2♥ en K♥8♥6♦ → carta alta As → débil.
+
+---
+
+# Herramienta 03 · Outs
+
+Criterios elegidos con el usuario: se cuentan proyectos **y** mejoras, la probabilidad se
+corrige con la regla del 2 y del 4, y se juega en flop y turn.
+
+## 7. Definición exacta de out
+
+- Una carta es out si, al salir en la siguiente calle, tu jugada sube de categoría **y**
+  supera lo que daría la mesa sola con esa carta (si solo mejora la mesa, no cuenta).
+- Escalera, color o mejor: siempre cuenta (incluye trío → full/póker por emparejarse la mesa).
+- Dobles parejas o trío: solo si la carta empareja una de tus cartas.
+  Ej.: Q♠J♦ en Q♥7♣3♦ → un 7 no es out (QQ77 lo da la mesa).
+- Pareja: solo si empareja una **overcard** (carta tuya más alta que toda la mesa) → pareja máxima.
+  Ej.: J♠4♦ en K♣8♥2♦ → 0 outs.
+- Cada carta cuenta una sola vez y se agrupa por la mejor jugada que consigue.
+- No se descuentan outs "sucios" (p. ej. una carta que te da color pero también le puede
+  dar full a un rival): el conteo es el de libro para principiantes.
+
+## 8. Repartos excluidos
+
+- Mesas emparejadas: el conteo de mejoras se vuelve confuso (¿una overcard que te da
+  dobles con la pareja de la mesa cuenta como pareja máxima?).
+- Manos que ya tienen escalera o mejor (solo quedarían outs a full).
+- Situaciones con menos de 2 outs.
+- El 70 % de los repartos tiene proyecto de color o escalera; el 30 % solo mejoras.
+
+## 9. Porcentajes
+
+- La respuesta correcta es exactamente outs × 4 (flop) u outs × 2 (turn), sin la corrección
+  habitual para muchos outs (p. ej. 15 outs × 4 = 60 % aunque el exacto sea 54,1 %).
+  El % exacto se muestra siempre al corregir.
+- El porcentaje se corrige con los outs correctos aunque hayas contado mal los outs.
