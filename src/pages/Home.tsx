@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { hitRate, loadScore } from '../lib/score';
+import { DictionaryCorner } from './DictionaryCorner';
 import { APP_NAME, TOOLS, type Tool, toolHref } from '../tools/registry';
 
 /** Resumen corto del progreso de cada herramienta, si tiene. */
@@ -135,6 +136,8 @@ export function Home() {
           <ToolCard key={tool.id} tool={tool} delay={120 + i * 90} />
         ))}
       </section>
+
+      <DictionaryCorner />
 
       <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-14 font-mono text-[11px] uppercase tracking-[0.2em] text-slate-600">
         <span>{APP_NAME} · v1</span>

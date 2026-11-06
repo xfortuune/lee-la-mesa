@@ -2,7 +2,18 @@ import type { ReactNode } from 'react';
 import { APP_NAME } from '../tools/registry';
 
 /** Cabecera común de las herramientas: volver al hub, título y acciones a la derecha. */
-export function ToolHeader({ title, index, actions }: { title: string; index: string; actions?: ReactNode }) {
+export function ToolHeader({
+  title,
+  index,
+  subtitle,
+  actions,
+}: {
+  title: string;
+  index?: string;
+  /** Sustituye a "Hold'em Lab · Herramienta NN". */
+  subtitle?: string;
+  actions?: ReactNode;
+}) {
   return (
     <header className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 items-center gap-3">
@@ -19,7 +30,7 @@ export function ToolHeader({ title, index, actions }: { title: string; index: st
             {title}
           </h1>
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-slate-500 sm:text-[11px]">
-            {APP_NAME} · Herramienta {index}
+            {subtitle ?? `${APP_NAME} · Herramienta ${index}`}
           </p>
         </div>
       </div>

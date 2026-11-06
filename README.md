@@ -10,6 +10,11 @@ tres herramientas (las rutas usan hash: `#/lee-la-mesa`…). Se añaden en
 | 02 | Calculadora | Disponible |
 | 03 | Outs | Disponible |
 
+Además, el hub tiene un **rincón del diccionario** (buscador, índice A–Z y término del día)
+que lleva a `#/diccionario`: 380 términos de póker recopilados de los glosarios de
+[Poker Red](https://www.poker-red.com/aprender-poker/diccionario-de-poker) y
+[ZerosPoker](https://zerospoker.com/glosario/), sin duplicados y con definiciones propias.
+
 ## 01 · Lee la mesa
 
 Entrenador de Texas Hold'em para principiantes. En cada ronda se reparten 2 cartas
@@ -65,7 +70,9 @@ npm run build    # build de producción en dist/
   - `equity.ts` — evaluador de manos y cálculo de equity.
   - `outs.ts` — conteo de outs, regla del 2 y del 4 y reparto de situaciones.
   - `*.test.ts` — tests.
-- `src/pages/Home.tsx` — página de inicio (hub).
+- `src/pages/Home.tsx` — página de inicio (hub) y `DictionaryCorner.tsx`, su rincón del diccionario.
+- `src/pages/Dictionary.tsx` — página del diccionario.
+- `src/dictionary/` — términos del diccionario, búsqueda y término del día (con test de duplicados).
 - `src/router.ts` — enrutado mínimo por hash.
 - `src/tools/registry.ts` — lista de herramientas del hub.
 - `src/tools/lee-la-mesa/` — interfaz de la herramienta 01.
