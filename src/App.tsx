@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Home } from './pages/Home';
 import { useHashRoute } from './router';
+import Calculadora from './tools/calculadora/Calculadora';
 import LeeLaMesa from './tools/lee-la-mesa/LeeLaMesa';
 import { APP_NAME, TOOLS } from './tools/registry';
 
@@ -15,6 +16,8 @@ export default function App() {
   switch (tool?.id) {
     case 'lee-la-mesa':
       return <LeeLaMesa />;
+    case 'calculadora':
+      return <Calculadora />;
     default:
       return <Home />;
   }

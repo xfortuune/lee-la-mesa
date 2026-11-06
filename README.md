@@ -7,7 +7,7 @@ tres herramientas (las rutas usan hash: `#/lee-la-mesa`…). Se añaden en
 | # | Herramienta | Estado |
 |---|-------------|--------|
 | 01 | Lee la mesa | Disponible |
-| 02 | — | Próximamente |
+| 02 | Calculadora | Disponible |
 | 03 | — | Próximamente |
 
 ## 01 · Lee la mesa
@@ -21,7 +21,15 @@ y un flop, y respondes:
 La app corrige cada respuesta y explica el porqué siguiendo los criterios del
 método EducaPoker (ver el botón **Reglas** dentro de la app).
 
-## Características
+## 02 · Calculadora
+
+Calculadora de equity para hasta 10 jugadores: eliges las cartas de cada jugador y de la
+mesa (las que no elijas se reparten al azar) y muestra para cada uno la probabilidad de
+ganar, de empatar y su equity, además de la probabilidad de terminar con cada jugada.
+Cálculo exacto cuando hay pocas combinaciones (flop, turn) y Monte Carlo (40.000
+simulaciones) en el resto, en un Web Worker para no bloquear la interfaz.
+
+## Características de Lee la mesa
 
 - Baraja de 4 colores (♠ negro, ♥ rojo, ♦ azul, ♣ verde).
 - Explicaciones generadas por la lógica (categoría + motivo).
@@ -47,11 +55,13 @@ npm run build    # build de producción en dist/
   - `coordination.ts` — coordinación del flop (preparada para añadir el turn).
   - `strength.ts` — fuerza de la mano.
   - `deal.ts` — reparto normal y equilibrado.
-  - `logic.test.ts` — tests.
+  - `equity.ts` — evaluador de manos y cálculo de equity.
+  - `*.test.ts` — tests.
 - `src/pages/Home.tsx` — página de inicio (hub).
 - `src/router.ts` — enrutado mínimo por hash.
 - `src/tools/registry.ts` — lista de herramientas del hub.
 - `src/tools/lee-la-mesa/` — interfaz de la herramienta 01.
+- `src/tools/calculadora/` — interfaz de la herramienta 02 (con su Web Worker).
 - `src/components/` — componentes compartidos (cartas).
 - `DUDAS.md` — casos que las reglas no cubren de forma clara y la decisión provisional tomada.
 
