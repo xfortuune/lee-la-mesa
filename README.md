@@ -1,4 +1,16 @@
-# Lee la mesa ♠
+# Hold'em Lab ♠
+
+Hub de herramientas de práctica para Texas Hold'em. La página de inicio da acceso a
+tres herramientas (las rutas usan hash: `#/lee-la-mesa`…). Se añaden en
+`src/tools/registry.ts`.
+
+| # | Herramienta | Estado |
+|---|-------------|--------|
+| 01 | Lee la mesa | Disponible |
+| 02 | — | Próximamente |
+| 03 | — | Próximamente |
+
+## 01 · Lee la mesa
 
 Entrenador de Texas Hold'em para principiantes. En cada ronda se reparten 2 cartas
 y un flop, y respondes:
@@ -36,7 +48,11 @@ npm run build    # build de producción en dist/
   - `strength.ts` — fuerza de la mano.
   - `deal.ts` — reparto normal y equilibrado.
   - `logic.test.ts` — tests.
-- `src/components/` — componentes de la interfaz.
+- `src/pages/Home.tsx` — página de inicio (hub).
+- `src/router.ts` — enrutado mínimo por hash.
+- `src/tools/registry.ts` — lista de herramientas del hub.
+- `src/tools/lee-la-mesa/` — interfaz de la herramienta 01.
+- `src/components/` — componentes compartidos (cartas).
 - `DUDAS.md` — casos que las reglas no cubren de forma clara y la decisión provisional tomada.
 
 Stack: Vite + React + TypeScript + Tailwind CSS. Sin backend.

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { STRAIGHT_EXCEPTIONS } from '../logic';
+import { STRAIGHT_EXCEPTIONS } from '../../logic';
 
 export function RulesModal({ onClose }: { onClose: () => void }) {
   useEffect(() => {
