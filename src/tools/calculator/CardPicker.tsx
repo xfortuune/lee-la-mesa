@@ -6,7 +6,7 @@ import { type Card, RANKS, SUITS, rankLabel } from '../../logic';
 interface Props {
   title: string;
   current: Card | null;
-  /** Cartas ocupadas en otras posiciones (clave "rango+palo"). */
+  /** Cards taken in other slots (key "rank+suit"). */
   used: Set<string>;
   onPick: (card: Card) => void;
   onClear: () => void;

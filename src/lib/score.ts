@@ -1,4 +1,4 @@
-// Marcador de los entrenadores, guardado en localStorage (siempre envuelto en try/catch).
+// Trainer scores, stored in localStorage (always wrapped in try/catch).
 
 export interface Score {
   hits: number;
@@ -23,11 +23,11 @@ export function saveScore(key: string, score: Score): void {
   try {
     localStorage.setItem(key, JSON.stringify(score));
   } catch {
-    // sin almacenamiento disponible: el marcador vive solo en esta sesión
+    // no storage available: the score only lives for this session
   }
 }
 
-/** Suma el resultado de cada pregunta (true = acierto) al marcador. */
+/** Adds each question's result (true = correct) to the score. */
 export function recordResults(score: Score, results: boolean[]): Score {
   let { hits, misses, streak, bestStreak } = score;
   for (const ok of results) {

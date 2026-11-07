@@ -6,69 +6,69 @@ const count = (hole: string, board: string) => outs(hole, board).outs.length;
 const group = (hole: string, board: string, reason: string) =>
   outs(hole, board).groups.find((g) => g.reason === reason)?.cards.length ?? 0;
 
-describe('conteo de outs: proyectos', () => {
-  it('proyecto de color: 9 outs', () => {
-    // 6♥ y 5♥ por debajo de la mesa: sin overcards
+describe('counting outs: draws', () => {
+  it('flush draw: 9 outs', () => {
+    // 6♥ and 5♥ are below the board: no overcards
     expect(count('6♥5♥', 'K♥9♥2♣')).toBe(9);
-    expect(group('6♥5♥', 'K♥9♥2♣', 'Color')).toBe(9);
+    expect(group('6♥5♥', 'K♥9♥2♣', 'flush')).toBe(9);
   });
 
-  it('escalera abierta: 8 outs (+ overcards)', () => {
-    expect(group('9♠8♦', '7♣6♥2♠', 'Escalera')).toBe(8);
-    // 9 y 8 son overcards: 3 + 3
-    expect(group('9♠8♦', '7♣6♥2♠', 'Pareja máxima')).toBe(6);
+  it('open-ended straight draw: 8 outs (+ overcards)', () => {
+    expect(group('9♠8♦', '7♣6♥2♠', 'straight')).toBe(8);
+    // 9 and 8 are overcards: 3 + 3
+    expect(group('9♠8♦', '7♣6♥2♠', 'top_pair')).toBe(6);
     expect(count('9♠8♦', '7♣6♥2♠')).toBe(14);
   });
 
-  it('gutshot sin overcards: 4 outs', () => {
+  it('gutshot without overcards: 4 outs', () => {
     expect(count('9♠7♦', 'J♣8♥2♦')).toBe(4);
   });
 
-  it('color + escalera abierta: 15 outs', () => {
-    // 8♥7♥ en 6♥5♥K♣: color 9 + escalera 6 (las 9 y 4 que no son ♥)
+  it('flush + open-ended straight draw: 15 outs', () => {
+    // 8♥7♥ on 6♥5♥K♣: flush 9 + straight 6 (the non-heart 9s and 4s)
     const r = outs('8♥7♥', '6♥5♥K♣');
     expect(r.outs.length).toBe(15);
-    expect(r.groups.map((g) => g.reason)).toContain('Escalera de color');
+    expect(r.groups.map((g) => g.reason)).toContain('straight_flush');
   });
 
-  it('color + dos overcards: 15 outs', () => {
-    expect(group('A♥K♥', 'Q♥7♥2♣', 'Color')).toBe(9);
-    expect(group('A♥K♥', 'Q♥7♥2♣', 'Pareja máxima')).toBe(6);
+  it('flush + two overcards: 15 outs', () => {
+    expect(group('A♥K♥', 'Q♥7♥2♣', 'flush')).toBe(9);
+    expect(group('A♥K♥', 'Q♥7♥2♣', 'top_pair')).toBe(6);
     expect(count('A♥K♥', 'Q♥7♥2♣')).toBe(15);
   });
 });
 
-describe('conteo de outs: mejoras', () => {
-  it('pareja en mano a trío: 2 outs', () => {
+describe('counting outs: improvements', () => {
+  it('pocket pair to a set: 2 outs', () => {
     expect(count('5♠5♦', 'K♣9♥2♦')).toBe(2);
   });
 
-  it('pareja máxima a dobles o trío: 5 outs', () => {
+  it('top pair to two pair or trips: 5 outs', () => {
     expect(count('Q♠J♦', 'Q♥7♣3♦')).toBe(5);
   });
 
-  it('dobles parejas a full: 4 outs', () => {
+  it('two pair to a full house: 4 outs', () => {
     expect(count('A♠7♦', 'A♥7♣3♦')).toBe(4);
   });
 
-  it('trío a full o póker: 7 outs en el flop', () => {
+  it('a set to a full house or quads: 7 outs on the flop', () => {
     expect(count('7♠7♦', 'A♥7♣3♦')).toBe(7);
   });
 
-  it('emparejar una carta por debajo de la más alta de la mesa no cuenta', () => {
-    // J y 4 con mesa K-8-2: ninguna es overcard, sin proyectos
+  it('pairing a card below the highest board card does not count', () => {
+    // J and 4 on K-8-2: neither is an overcard, no draws
     expect(count('J♠4♦', 'K♣8♥2♦')).toBe(0);
   });
 
-  it('una carta que solo empareja la mesa no es out', () => {
+  it('a card that only pairs the board is not an out', () => {
     const r = outs('Q♠J♦', 'Q♥7♣3♦');
     expect(r.outs.map((c) => c.rank)).not.toContain(7);
     expect(r.outs.map((c) => c.rank)).not.toContain(3);
   });
 });
 
-describe('probabilidades', () => {
-  it('flop: regla del 4 y exacto', () => {
+describe('probabilities', () => {
+  it('flop: rule of 4 and exact', () => {
     const r = outs('6♥5♥', 'K♥9♥2♣');
     expect(r.street).toBe('flop');
     expect(r.unseen).toBe(47);
@@ -76,17 +76,17 @@ describe('probabilidades', () => {
     expect(r.exact).toBeCloseTo(34.97, 1);
   });
 
-  it('turn: regla del 2 y exacto', () => {
+  it('turn: rule of 2 and exact', () => {
     const r = outs('6♥5♥', 'K♥9♥2♣3♦');
     expect(r.street).toBe('turn');
     expect(r.unseen).toBe(46);
-    // color 9 + gutshot del 4 (3 que no son ♥) = 12
+    // flush 9 + gutshot to the 4 (3 non-hearts) = 12
     expect(r.outs.length).toBe(12);
     expect(r.estimate).toBe(24);
     expect(r.exact).toBeCloseTo((12 / 46) * 100, 5);
   });
 
-  it('opciones de porcentaje: 4 distintas e incluyen la correcta', () => {
+  it('percentage options: 4 distinct, including the correct one', () => {
     for (let s = 0; s < 50; s++) {
       const r = outs('6♥5♥', 'K♥9♥2♣');
       const opts = percentOptions(r, seededRandom(s));
@@ -95,15 +95,15 @@ describe('probabilidades', () => {
     }
   });
 
-  it('el motivo enumera las cartas', () => {
-    const r = outs('6♥5♥', 'K♥9♥2♣');
+  it('the reason lists the cards', () => {
+    const r = computeOuts(parseCards('6♥5♥'), parseCards('K♥9♥2♣'), 'es');
     expect(r.reason).toContain('color (9 outs');
     expect(r.reason).toContain(cardsToString(r.groups[0].cards));
   });
 });
 
-describe('reparto de situaciones', () => {
-  it('siempre hay outs, mesa sin emparejar y nada hecho', () => {
+describe('dealing spots', () => {
+  it('always has outs, an unpaired board and nothing made yet', () => {
     const random = seededRandom(7);
     for (let i = 0; i < 300; i++) {
       const { hole, board } = dealOuts(random);
@@ -111,7 +111,7 @@ describe('reparto de situaciones', () => {
       expect(new Set(board.map((c) => c.rank)).size).toBe(board.length);
       const r = computeOuts(hole, board);
       expect(r.outs.length).toBeGreaterThanOrEqual(2);
-      expect(['Carta alta', 'Pareja', 'Dobles parejas', 'Trío']).toContain(r.current);
+      expect(['high_card', 'pair', 'two_pair', 'trips']).toContain(r.current);
     }
   });
 });

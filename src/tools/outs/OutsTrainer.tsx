@@ -77,18 +77,18 @@ const T = {
 
 const SCORE_KEY = SCORE_KEYS.outs;
 
-/** Color de cada tipo de out en el mapa y en la explicación. */
+/** Colour of each out type in the map and the explanation. */
 const REASON_COLOR: Record<OutReason, string> = {
-  'Escalera de color': '#f472b6',
-  Póker: '#f472b6',
-  Full: '#fbbf24',
-  Color: '#22e4ff',
-  Escalera: '#a855f7',
-  Trío: '#a3ff6b',
-  'Dobles parejas': '#38bdf8',
-  'Pareja máxima': '#fb923c',
-  Pareja: '#94a3b8',
-  'Carta alta': '#94a3b8',
+  straight_flush: '#f472b6',
+  quads: '#f472b6',
+  full_house: '#fbbf24',
+  flush: '#22e4ff',
+  straight: '#a855f7',
+  trips: '#a3ff6b',
+  two_pair: '#38bdf8',
+  top_pair: '#fb923c',
+  pair: '#94a3b8',
+  high_card: '#94a3b8',
 };
 
 function CardChip({ card }: { card: Card }) {
@@ -102,7 +102,7 @@ function CardChip({ card }: { card: Card }) {
   );
 }
 
-/** Mapa de las 52 cartas: las tuyas y la mesa atenuadas, los outs iluminados por tipo. */
+/** Map of the 52 cards: yours and the board dimmed, outs lit up by type. */
 function OutsMap({ known, outColor }: { known: Set<string>; outColor: Map<string, string> }) {
   const ranks = [...RANKS].reverse();
   return (

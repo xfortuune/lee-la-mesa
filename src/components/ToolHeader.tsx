@@ -3,7 +3,7 @@ import { useLang } from '../i18n/lang';
 import { APP_NAME } from '../tools/registry';
 import { LangSwitch } from './LangSwitch';
 
-/** Cabecera común de las herramientas: volver al hub, título y acciones a la derecha. */
+/** Shared tool header: back to the hub, title, and actions on the right. */
 export function ToolHeader({
   title,
   index,
@@ -12,7 +12,7 @@ export function ToolHeader({
 }: {
   title: string;
   index?: string;
-  /** Sustituye a "PokerToolBox · Tool NN". */
+  /** Replaces "PokerToolBox · Tool NN". */
   subtitle?: string;
   actions?: ReactNode;
 }) {

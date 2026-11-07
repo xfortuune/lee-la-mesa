@@ -1,4 +1,4 @@
-// Reparto de manos.
+// Dealing hands for the board-reading trainer.
 import { type Card, fullDeck, shuffle } from './cards';
 import { type Coordination, classifyBoard } from './coordination';
 
@@ -13,14 +13,14 @@ export function dealRandom(random: () => number = Math.random): Deal {
 }
 
 /**
- * Peso de cada tipo de mesa en el modo equilibrado. La extremadamente coordinada
- * es un caso muy puntual, así que sale menos que las otras tres.
+ * Weight of each board type in balanced mode. Extremely coordinated boards are a rare,
+ * special case, so they come up less often than the other three.
  */
 export const BALANCED_WEIGHTS: Record<Coordination, number> = {
-  extremadamente_coordinada: 0.1,
-  coordinada: 0.3,
-  semicoordinada: 0.3,
-  seca: 0.3,
+  extreme: 0.1,
+  coordinated: 0.3,
+  semi: 0.3,
+  dry: 0.3,
 };
 
 function pickTarget(random: () => number): Coordination {
@@ -29,13 +29,10 @@ function pickTarget(random: () => number): Coordination {
     if (x < w) return c;
     x -= w;
   }
-  return 'seca';
+  return 'dry';
 }
 
-/**
- * Modo equilibrado: se elige el tipo de mesa según BALANCED_WEIGHTS y se reparte
- * hasta obtener un flop de ese tipo.
- */
+/** Balanced mode: picks a board type by BALANCED_WEIGHTS and deals until a flop of that type comes. */
 export function dealBalanced(random: () => number = Math.random): Deal {
   const target = pickTarget(random);
   for (let i = 0; i < 20000; i++) {

@@ -1,12 +1,12 @@
 import { LANGS, useLang } from '../i18n/lang';
 
-/** Selector de idioma EN / ES, arriba a la derecha de cada página. */
+/** EN / ES language switcher, at the top right of every page. */
 export function LangSwitch() {
   const { lang, setLang } = useLang();
   const other = lang === 'en' ? 'es' : 'en';
   return (
     <>
-      {/* Móvil: un solo botón que cambia al otro idioma */}
+      {/* Mobile: a single button that switches to the other language */}
       <button
         type="button"
         onClick={() => setLang(other)}
@@ -18,7 +18,7 @@ export function LangSwitch() {
         <span className="text-slate-500" aria-hidden="true">⇄</span>
       </button>
 
-      {/* Desde tablet: selector EN | ES */}
+      {/* Tablet and up: EN | ES segmented control */}
       <div
         role="group"
         aria-label={lang === 'en' ? 'Language' : 'Idioma'}

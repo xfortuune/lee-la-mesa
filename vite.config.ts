@@ -4,7 +4,7 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Rutas relativas para poder publicarlo en GitHub Pages.
+  // Relative paths so the site works on GitHub Pages.
   base: './',
   plugins: [react(), tailwindcss()],
 })

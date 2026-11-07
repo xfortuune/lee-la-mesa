@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { LangSwitch } from '../components/LangSwitch';
-import { localize, termOfTheDay } from '../dictionary';
+import { localize, termOfTheDay } from '../glossary';
 import { type Lang, useLang } from '../i18n/lang';
 import { hitRate, loadScore } from '../lib/score';
 import { APP_NAME, TOOLS, type Tool, toolHref } from '../tools/registry';
@@ -40,10 +40,10 @@ const T = {
   },
 };
 
-/** Resumen corto del progreso de cada herramienta, si tiene. */
+/** Short progress summary for each tool, if it has one. */
 function toolStats(tool: Tool, lang: Lang): ReactNode {
   const t = T[lang];
-  if (tool.id === 'diccionario') {
+  if (tool.id === 'glossary') {
     return (
       <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-slate-500">
         {t.termOfDay}:{' '}
@@ -75,7 +75,7 @@ function ToolCard({ tool, delay, lang }: { tool: Tool; delay: number; lang: Lang
 
   const inner = (
     <>
-      {/* brillo de acento */}
+      {/* accent glow */}
       <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[var(--accent)] opacity-10 blur-3xl transition-opacity duration-500 group-hover:opacity-25" />
 
       <div className="relative flex items-start justify-between">
@@ -93,7 +93,7 @@ function ToolCard({ tool, delay, lang }: { tool: Tool; delay: number; lang: Lang
       </div>
 
       <div
-        // Los símbolos de varias letras ("Aa") van más pequeños para caber en la caja.
+        // Multi-letter glyphs ("Aa") are smaller so they fit in the box.
         style={tool.glyph.length > 1 ? { fontSize: '1.6rem', fontWeight: 700 } : undefined}
         className={`relative my-5 grid h-16 w-16 place-items-center rounded-2xl border text-4xl md:my-6 md:h-20 md:w-20 md:text-5xl transition duration-500 ${
           tool.ready

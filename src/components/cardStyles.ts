@@ -1,7 +1,7 @@
 import type { Lang } from '../i18n/lang';
 import { type Card, type Suit, rankLabel } from '../logic';
 
-// Baraja de 4 colores: ♠ negro, ♥ rojo, ♦ azul, ♣ verde.
+// Four-colour deck: ♠ black, ♥ red, ♦ blue, ♣ green.
 export const SUIT_TEXT: Record<Suit, string> = {
   '♠': 'text-slate-900',
   '♥': 'text-rose-600',
@@ -21,7 +21,7 @@ export const SUIT_NAME: Record<Lang, Record<Suit, string>> = {
   en: { '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' },
 };
 
-/** Nombre accesible de una carta: "A de picas" / "A of spades". */
+/** Accessible name of a card: "A of spades" / "A de picas". */
 export function cardName(c: Card, lang: Lang): string {
   return `${rankLabel(c.rank)} ${lang === 'en' ? 'of' : 'de'} ${SUIT_NAME[lang][c.suit]}`;
 }

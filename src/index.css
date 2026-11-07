@@ -62,7 +62,7 @@ body {
   background-attachment: fixed;
 }
 
-/* Rejilla sutil de fondo */
+/* Subtle background grid */
 body::before {
   content: "";
   position: fixed;
@@ -75,7 +75,7 @@ body::before {
   mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
 }
 
-/* Borde con degradado neón */
+/* Neon gradient border */
 .neon-border {
   position: relative;
 }

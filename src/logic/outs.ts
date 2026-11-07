@@ -1,12 +1,12 @@
-// Outs: cartas que, al salir en la siguiente calle, mejoran tu mano.
+// Outs: cards that improve your hand if they come on the next street.
 import type { Lang } from '../i18n/lang';
 import { type Card, cardsToString, fullDeck, joinList, parseCards, shuffle } from './cards';
 import { HAND_CATEGORIES, HAND_LABELS, type HandCategory, cardToInt, categoryOf, evaluate } from './equity';
 
 const CAT = Object.fromEntries(HAND_CATEGORIES.map((c, i) => [c, i])) as Record<HandCategory, number>;
 
-/** Motivo por el que una carta es out (de mejor a peor). */
-export type OutReason = HandCategory | 'Pareja máxima';
+/** Why a card is an out (best to worst). */
+export type OutReason = HandCategory | 'top_pair';
 
 export interface OutGroup {
   reason: OutReason;
@@ -17,52 +17,52 @@ export type Street = 'flop' | 'turn';
 
 export interface OutsResult {
   street: Street;
-  /** Jugada actual con tus cartas. */
+  /** Your current hand. */
   current: HandCategory;
   outs: Card[];
-  /** Outs agrupados por la jugada que consiguen (cada carta en un solo grupo). */
+  /** Outs grouped by the hand they make (each card in one group only). */
   groups: OutGroup[];
-  /** Cartas que quedan por salir (47 en el flop, 46 en el turn). */
+  /** Cards still to come (47 on the flop, 46 on the turn). */
   unseen: number;
-  /** Multiplicador de la regla: 4 en el flop (dos cartas por venir), 2 en el turn. */
+  /** Rule multiplier: 4 on the flop (two cards to come), 2 on the turn. */
   factor: 2 | 4;
-  /** Estimación con la regla del 2 y del 4, en %. */
+  /** Rule-of-2-and-4 estimate, in %. */
   estimate: number;
-  /** Probabilidad exacta de ligar al menos un out hasta el river, en %. */
+  /** Exact probability of hitting at least one out by the river, in %. */
   exact: number;
   reason: string;
 }
 
 const REASON_ORDER: OutReason[] = [
-  'Escalera de color',
-  'Póker',
-  'Full',
-  'Color',
-  'Escalera',
-  'Trío',
-  'Dobles parejas',
-  'Pareja máxima',
+  'straight_flush',
+  'quads',
+  'full_house',
+  'flush',
+  'straight',
+  'trips',
+  'two_pair',
+  'top_pair',
 ];
 
 const cat = (cards: Card[]) => categoryOf(evaluate(cards.map(cardToInt)));
 
-/** ¿Por qué `card` es out? null si no lo es. */
+/** Why is `card` an out? null when it is not one. */
 export function outReason(hole: Card[], board: Card[], card: Card): OutReason | null {
   const now = CAT[cat([...hole, ...board])];
   const next = CAT[cat([...hole, ...board, card])];
   const boardOnly = CAT[cat([...board, card])];
-  // Tiene que mejorar tu jugada y superar lo que ya da la mesa sola.
+  // It must improve your hand and beat what the board alone would give.
   if (next <= now || next <= boardOnly) return null;
 
-  if (next >= CAT['Escalera']) return HAND_CATEGORIES[next];
-  if (next === CAT['Pareja']) {
-    // Solo cuenta emparejar una overcard (carta tuya más alta que toda la mesa).
+  if (next >= CAT.straight) return HAND_CATEGORIES[next];
+  if (next === CAT.pair) {
+    // Only pairing an overcard counts (one of your cards above the whole board).
     const topBoard = Math.max(...board.map((c) => c.rank));
     const paired = hole.find((h) => h.rank === card.rank);
-    return paired && paired.rank > topBoard ? 'Pareja máxima' : null;
+    return paired && paired.rank > topBoard ? 'top_pair' : null;
   }
-  // Dobles parejas o trío: la carta tiene que emparejar una de las tuyas
-  // (si solo empareja la mesa, mejora a todos por igual).
+  // Two pair or trips: the card must pair one of yours
+  // (if it only pairs the board, it improves everyone equally).
   return hole.some((h) => h.rank === card.rank) ? HAND_CATEGORIES[next] : null;
 }
 
@@ -75,10 +75,10 @@ function describeGroup(g: OutGroup, lang: Lang): string {
   return `${HAND_LABELS[lang][g.reason].toLowerCase()} (${n} out${n === 1 ? '' : 's'}: ${cardsToString(g.cards)})`;
 }
 
-/** Cuenta los outs. `lang` solo afecta al texto de la explicación. */
-export function computeOuts(hole: Card[], board: Card[], lang: Lang = 'es'): OutsResult {
-  if (hole.length !== 2) throw new Error('Se necesitan 2 cartas en mano.');
-  if (board.length !== 3 && board.length !== 4) throw new Error('La mesa debe tener 3 (flop) o 4 (turn) cartas.');
+/** Counts the outs. `lang` only affects the wording of the explanation. */
+export function computeOuts(hole: Card[], board: Card[], lang: Lang = 'en'): OutsResult {
+  if (hole.length !== 2) throw new Error('Two hole cards are required.');
+  if (board.length !== 3 && board.length !== 4) throw new Error('The board must have 3 (flop) or 4 (turn) cards.');
 
   const street: Street = board.length === 3 ? 'flop' : 'turn';
   const known = new Set([...hole, ...board].map(cardToInt));
@@ -100,7 +100,10 @@ export function computeOuts(hole: Card[], board: Card[], lang: Lang = 'es'): Out
   const current = cat([...hole, ...board]);
 
   const now = HAND_LABELS[lang][current].toLowerCase();
-  const list = joinList(groups.map((g) => describeGroup(g, lang)), lang);
+  const list = joinList(
+    groups.map((g) => describeGroup(g, lang)),
+    lang,
+  );
   const reason =
     lang === 'en'
       ? n === 0
@@ -113,19 +116,25 @@ export function computeOuts(hole: Card[], board: Card[], lang: Lang = 'es'): Out
   return { street, current, outs, groups, unseen, factor, estimate: n * factor, exact, reason };
 }
 
-/** Texto de la regla: "9 outs × 4 = 36 %". */
-export function ruleText(r: OutsResult, lang: Lang = 'es'): string {
+/** The rule as text: "Rule of 4: 9 outs × 4 = 36%". */
+export function ruleText(r: OutsResult, lang: Lang = 'en'): string {
   return lang === 'en'
     ? `Rule of ${r.factor}: ${r.outs.length} outs × ${r.factor} = ${r.estimate}%`
     : `Regla del ${r.factor}: ${r.outs.length} outs × ${r.factor} = ${r.estimate} %`;
 }
 
-/** Opciones de porcentaje para la pregunta (la correcta + 3 distractores), ordenadas. */
+/** Percentage options for the question (the correct one + 3 distractors), sorted. */
 export function percentOptions(r: OutsResult, random: () => number = Math.random): number[] {
   const n = r.outs.length;
   const other = r.factor === 4 ? 2 : 4;
-  const candidates = [n * other, (n + 2) * r.factor, (n - 2) * r.factor, (n + 1) * r.factor, (n - 1) * r.factor, (n + 3) * r.factor]
-    .filter((v) => v > 0 && v !== r.estimate && v <= 100);
+  const candidates = [
+    n * other,
+    (n + 2) * r.factor,
+    (n - 2) * r.factor,
+    (n + 1) * r.factor,
+    (n - 1) * r.factor,
+    (n + 3) * r.factor,
+  ].filter((v) => v > 0 && v !== r.estimate && v <= 100);
   const unique = [...new Set(candidates)];
   const picked = shuffle(unique, random).slice(0, 3);
   return [r.estimate, ...picked].sort((a, b) => a - b);
@@ -141,9 +150,8 @@ function isPaired(cards: Card[]): boolean {
 }
 
 /**
- * Reparte una situación de entrenamiento: flop o turn (al 50 %), mesa sin emparejar,
- * sin escalera o mejor ya hecha y con al menos un out. El 70 % de las veces con proyecto
- * (color o escalera).
+ * Deals a training spot: flop or turn (50/50), unpaired board, no straight or better yet,
+ * and at least two outs. 70% of the time the spot has a draw (flush or straight).
  */
 export function dealOuts(random: () => number = Math.random): OutsDeal {
   const street: Street = random() < 0.5 ? 'flop' : 'turn';
@@ -153,13 +161,12 @@ export function dealOuts(random: () => number = Math.random): OutsDeal {
     const hole = deck.slice(0, 2);
     const board = deck.slice(2, street === 'flop' ? 5 : 6);
     if (isPaired(board)) continue;
-    if (CAT[cat([...hole, ...board])] >= CAT['Escalera']) continue;
+    if (CAT[cat([...hole, ...board])] >= CAT.straight) continue;
     const r = computeOuts(hole, board);
     if (r.outs.length < 2) continue;
-    const hasDraw = r.groups.some((g) => CAT[g.reason as HandCategory] >= CAT['Escalera']);
+    const hasDraw = r.groups.some((g) => g.reason !== 'top_pair' && CAT[g.reason] >= CAT.straight);
     if (hasDraw !== wantDraw) continue;
     return { hole, board };
   }
   return { hole: parseCards('A♥K♥'), board: parseCards('Q♥7♥2♣') };
 }
-

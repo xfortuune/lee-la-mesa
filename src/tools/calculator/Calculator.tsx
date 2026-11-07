@@ -4,12 +4,12 @@ import { CARD_SIZES, type CardSize, cardKey } from '../../components/cardStyles'
 import { ToolHeader, headerButtonClass } from '../../components/ToolHeader';
 import { type Lang, useLang } from '../../i18n/lang';
 import { type Card, HAND_CATEGORIES, HAND_LABELS, currentHand } from '../../logic';
-import { TOOLS } from '../registry';
+import { toolById } from '../registry';
 import { CardPicker } from './CardPicker';
 import { useEquity } from './useEquity';
 
 const MAX_PLAYERS = 10;
-const TOOL = TOOLS.find((t) => t.id === 'calculadora')!;
+const TOOL = toolById('calculator');
 
 const T = {
   en: {
@@ -145,7 +145,7 @@ export default function Calculadora() {
     else setPlayers((ps) => ps.map((h, p) => (p === s.p ? h.map((c, i) => (i === s.i ? card : c)) : h)));
   };
 
-  // Cartas ocupadas en cualquier otra posición
+  // Cards taken in any other slot
   const usedElsewhere = useMemo(() => {
     const set = new Set<string>();
     const add = (c: Card | null) => c && set.add(cardKey(c));
@@ -156,13 +156,13 @@ export default function Calculadora() {
     return set;
   }, [board, players, picking]);
 
-  /** Tras elegir, salta a la siguiente posición vacía del mismo grupo (o cierra). */
+  /** After picking, jump to the next empty slot in the same group (or close). */
   const pick = (card: Card) => {
     if (!picking) return;
     setCardAt(picking, card);
     let next: Slot | null = null;
     if (picking.kind === 'board') {
-      // Solo avanza dentro del flop; turn y river se eligen de una en una.
+      // Only advances within the flop; turn and river are picked one at a time.
       const i = board.findIndex((c, idx) => idx > picking.i && idx < 3 && !c);
       if (i >= 0) next = { kind: 'board', i };
     } else {
@@ -207,7 +207,7 @@ export default function Calculadora() {
         }
       />
 
-      {/* Mesa */}
+      {/* Board */}
       <section
         aria-label={t.table}
         className="neon-border relative overflow-hidden rounded-[2.25rem] bg-[radial-gradient(ellipse_at_center,_#0f2a3a_0%,_#0b1530_45%,_#070918_100%)] px-3 py-5 shadow-[0_0_60px_-20px_var(--color-neon-cyan),inset_0_0_60px_rgba(0,0,0,0.6)] sm:py-7"
@@ -249,7 +249,7 @@ export default function Calculadora() {
           ) : shown ? (
             <>
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)]" />
-              {shown.method === 'exacto'
+              {shown.method === 'exact'
                 ? `${t.exact} · ${shown.samples.toLocaleString(t.locale)} ${t.combos}`
                 : `Monte Carlo · ${shown.samples.toLocaleString(t.locale)} ${t.sims}`}
             </>
@@ -257,7 +257,7 @@ export default function Calculadora() {
         </div>
       </section>
 
-      {/* Jugadores */}
+      {/* Players */}
       <section aria-label={t.playersSection} className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
         {players.map((hole, p) => {
           const res = shown?.players[p];
@@ -362,7 +362,7 @@ export default function Calculadora() {
         )}
       </section>
 
-      {/* Probabilidad de cada jugada final */}
+      {/* Odds of each final hand */}
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur sm:p-6">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>

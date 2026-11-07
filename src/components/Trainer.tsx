@@ -1,4 +1,4 @@
-// Piezas comunes de los entrenadores: opciones de respuesta, corrección, marcador y botón principal.
+// Shared trainer pieces: answer options, feedback, scoreboard and main button.
 import type { ReactNode } from 'react';
 import { useLang } from '../i18n/lang';
 import { type Score, hitRate } from '../lib/score';

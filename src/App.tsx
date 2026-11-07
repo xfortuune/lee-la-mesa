@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
-import { Dictionary } from './pages/Dictionary';
+import { useLang } from './i18n/lang';
+import { Glossary } from './pages/Glossary';
 import { Home } from './pages/Home';
 import { useHashRoute } from './router';
-import Calculadora from './tools/calculadora/Calculadora';
-import LeeLaMesa from './tools/lee-la-mesa/LeeLaMesa';
+import Calculator from './tools/calculator/Calculator';
 import OutsTrainer from './tools/outs/OutsTrainer';
-import { useLang } from './i18n/lang';
+import ReadTheBoard from './tools/read-the-board/ReadTheBoard';
 import { APP_NAME, TOOLS } from './tools/registry';
 
 export default function App() {
@@ -18,14 +18,14 @@ export default function App() {
   }, [tool, lang]);
 
   switch (tool?.id) {
-    case 'lee-la-mesa':
-      return <LeeLaMesa />;
-    case 'calculadora':
-      return <Calculadora />;
+    case 'read-the-board':
+      return <ReadTheBoard />;
+    case 'calculator':
+      return <Calculator />;
     case 'outs':
       return <OutsTrainer />;
-    case 'diccionario':
-      return <Dictionary />;
+    case 'glossary':
+      return <Glossary />;
     default:
       return <Home />;
   }

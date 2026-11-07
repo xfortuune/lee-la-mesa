@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect } from 'react';
 import { useLang } from '../i18n/lang';
 
-/** Ventana de información (reglas, ayuda) con el estilo del hub. Se cierra con Escape o tocando fuera. */
+/** Info dialog (rules, help) in the hub style. Closes with Escape or a click outside. */
 export function InfoModal({
   eyebrow,
   title,

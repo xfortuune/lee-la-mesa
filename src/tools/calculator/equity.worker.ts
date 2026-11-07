@@ -1,4 +1,4 @@
-// Calcula la equity fuera del hilo principal para no bloquear la interfaz.
+// Calculates equity off the main thread so the UI never blocks.
 import { type EquityInput, calculateEquity } from '../../logic';
 
 self.onmessage = (e: MessageEvent<{ id: number; input: EquityInput }>) => {

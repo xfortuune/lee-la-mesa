@@ -9,14 +9,15 @@ import {
   localize,
   searchTerms,
   sortedTerms,
-} from '../dictionary';
+  termId,
+} from '../glossary';
 import { type Lang, useLang } from '../i18n/lang';
 import { hashParams } from '../router';
-import { APP_NAME, TOOLS } from '../tools/registry';
+import { APP_NAME, toolById } from '../tools/registry';
 
-const CATEGORIES = Object.keys(CATEGORY_LABELS.es) as Category[];
+const CATEGORIES = Object.keys(CATEGORY_LABELS.en) as Category[];
 const LETTERS = ['#', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
-const TOOL = TOOLS.find((t) => t.id === 'diccionario')!;
+const TOOL = toolById('glossary');
 
 const T = {
   en: {
@@ -74,18 +75,18 @@ function TermCard({ t, lang }: { t: Term; lang: Lang }) {
   );
 }
 
-export function Dictionary() {
+export function Glossary() {
   const { lang } = useLang();
   const t = T[lang];
   const [query, setQuery] = useState(() => hashParams().get('q') ?? '');
   const [category, setCategory] = useState<Category | null>(null);
 
-  // Si se llega con ?l=A, salta a esa letra.
+  // When arriving with ?l=A, jump to that letter.
   useEffect(() => {
     const l = hashParams().get('l');
     if (!l) return;
-    // Con un pequeño retardo para ganar a la restauración de scroll del navegador.
-    const timer = setTimeout(() => document.getElementById(`letra-${l}`)?.scrollIntoView(), 80);
+    // Slightly delayed to win against the browser's scroll restoration.
+    const timer = setTimeout(() => document.getElementById(`letter-${l}`)?.scrollIntoView(), 80);
     return () => clearTimeout(timer);
   }, []);
 
@@ -167,7 +168,7 @@ export function Dictionary() {
                 <button
                   key={l}
                   disabled={!has}
-                  onClick={() => document.getElementById(`letra-${l}`)?.scrollIntoView({ behavior: 'smooth' })}
+                  onClick={() => document.getElementById(`letter-${l}`)?.scrollIntoView({ behavior: 'smooth' })}
                   className="grid h-7 w-7 shrink-0 place-items-center rounded-md font-mono text-xs transition enabled:text-slate-300 enabled:hover:bg-neon-cyan/15 enabled:hover:text-white disabled:text-slate-700"
                 >
                   {l}
@@ -186,7 +187,7 @@ export function Dictionary() {
       ) : searching ? (
         <section aria-label={t.results} className="grid gap-2.5">
           {results.map((x) => (
-            <TermCard key={x.term} t={x} lang={lang} />
+            <TermCard key={termId(x)} t={x} lang={lang} />
           ))}
         </section>
       ) : (
@@ -194,7 +195,7 @@ export function Dictionary() {
           {[...grouped.entries()].map(([letter, list]) => (
             <section
               key={letter}
-              id={`letra-${letter}`}
+              id={`letter-${letter}`}
               aria-label={`${t.letter} ${letter}`}
               className="scroll-mt-44 sm:scroll-mt-56"
             >
@@ -207,7 +208,7 @@ export function Dictionary() {
               </div>
               <div className="grid gap-2.5">
                 {list.map((x) => (
-                  <TermCard key={x.term} t={x} lang={lang} />
+                  <TermCard key={termId(x)} t={x} lang={lang} />
                 ))}
               </div>
             </section>

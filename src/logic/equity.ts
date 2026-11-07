@@ -1,8 +1,8 @@
-// Evaluador de manos de 5–7 cartas y cálculo de equity (probabilidad de ganar/empatar).
+// 5–7 card hand evaluator and equity calculation (probability of winning/tying).
 import type { Lang } from '../i18n/lang';
 import { type Card, SUITS } from './cards';
 
-// Las cartas se codifican como enteros 0..51: rank = (c >> 2) + 2, palo = c & 3.
+// Cards are encoded as integers 0..51: rank = (c >> 2) + 2, suit = c & 3.
 export function cardToInt(card: Card): number {
   return ((card.rank - 2) << 2) | SUITS.indexOf(card.suit);
 }
@@ -11,51 +11,52 @@ export function intToCard(c: number): Card {
   return { rank: (c >> 2) + 2, suit: SUITS[c & 3] };
 }
 
+/** Hand categories from worst to best (the index is the category in the score). */
 export const HAND_CATEGORIES = [
-  'Carta alta',
-  'Pareja',
-  'Dobles parejas',
-  'Trío',
-  'Escalera',
-  'Color',
-  'Full',
-  'Póker',
-  'Escalera de color',
+  'high_card',
+  'pair',
+  'two_pair',
+  'trips',
+  'straight',
+  'flush',
+  'full_house',
+  'quads',
+  'straight_flush',
 ] as const;
 
 export type HandCategory = (typeof HAND_CATEGORIES)[number];
 
-/** Nombre de cada jugada para mostrar (las claves de HAND_CATEGORIES son internas, en español). */
-export const HAND_LABELS: Record<Lang, Record<HandCategory | 'Pareja máxima', string>> = {
-  es: {
-    'Carta alta': 'Carta alta',
-    Pareja: 'Pareja',
-    'Dobles parejas': 'Dobles parejas',
-    Trío: 'Trío',
-    Escalera: 'Escalera',
-    Color: 'Color',
-    Full: 'Full',
-    Póker: 'Póker',
-    'Escalera de color': 'Escalera de color',
-    'Pareja máxima': 'Pareja máxima',
-  },
+/** Display name of each hand (plus "top pair", used by the outs trainer). */
+export const HAND_LABELS: Record<Lang, Record<HandCategory | 'top_pair', string>> = {
   en: {
-    'Carta alta': 'High card',
-    Pareja: 'Pair',
-    'Dobles parejas': 'Two pair',
-    Trío: 'Three of a kind',
-    Escalera: 'Straight',
-    Color: 'Flush',
-    Full: 'Full house',
-    Póker: 'Four of a kind',
-    'Escalera de color': 'Straight flush',
-    'Pareja máxima': 'Top pair',
+    high_card: 'High card',
+    pair: 'Pair',
+    two_pair: 'Two pair',
+    trips: 'Three of a kind',
+    straight: 'Straight',
+    flush: 'Flush',
+    full_house: 'Full house',
+    quads: 'Four of a kind',
+    straight_flush: 'Straight flush',
+    top_pair: 'Top pair',
+  },
+  es: {
+    high_card: 'Carta alta',
+    pair: 'Pareja',
+    two_pair: 'Dobles parejas',
+    trips: 'Trío',
+    straight: 'Escalera',
+    flush: 'Color',
+    full_house: 'Full',
+    quads: 'Póker',
+    straight_flush: 'Escalera de color',
+    top_pair: 'Pareja máxima',
   },
 };
 
-/** Rango más alto de una escalera dentro de la máscara de rangos (bit r = rango r), o 0. */
+/** Highest rank of a straight inside the rank mask (bit r = rank r), or 0. */
 function straightHigh(mask: number): number {
-  if (mask & (1 << 14)) mask |= 1 << 1; // As como 1
+  if (mask & (1 << 14)) mask |= 1 << 1; // ace as 1
   for (let high = 14; high >= 5; high--) {
     const need = 0b11111 << (high - 4);
     if ((mask & need) === need) return high;
@@ -63,7 +64,7 @@ function straightHigh(mask: number): number {
   return 0;
 }
 
-/** Rangos de la máscara de mayor a menor, como mucho `n`. */
+/** Ranks in the mask from high to low, at most `n`. */
 function topRanks(mask: number, n: number): number[] {
   const out: number[] = [];
   for (let r = 14; r >= 2 && out.length < n; r--) if (mask & (1 << r)) out.push(r);
@@ -76,7 +77,7 @@ function pack(category: number, kickers: number[]): number {
   return v;
 }
 
-/** Puntuación comparable (mayor = mejor) de la mejor mano de 5 entre 5–7 cartas. */
+/** Comparable score (higher = better) of the best 5-card hand among 5–7 cards. */
 export function evaluate(cards: number[]): number {
   const counts = new Array<number>(15).fill(0);
   const suitMasks = [0, 0, 0, 0];
@@ -91,12 +92,12 @@ export function evaluate(cards: number[]): number {
     rankMask |= 1 << r;
   }
 
-  // Color / escalera de color
+  // Flush / straight flush
   for (let s = 0; s < 4; s++) {
     if (suitCounts[s] >= 5) {
       const sf = straightHigh(suitMasks[s]);
       if (sf) return pack(8, [sf]);
-      // Con 7 cartas o menos, un color no puede convivir con póker ni full.
+      // With 7 cards or fewer, a flush cannot coexist with quads or a full house.
       return pack(5, topRanks(suitMasks[s], 5));
     }
   }
@@ -110,7 +111,7 @@ export function evaluate(cards: number[]): number {
   return groups;
 }
 
-/** Mejor mano sin contar color ni escalera. */
+/** Best hand ignoring flushes and straights. */
 function evaluateGroups(counts: number[], rankMask: number): number {
   const quads: number[] = [];
   const trips: number[] = [];
@@ -140,7 +141,7 @@ export function categoryOf(score: number): HandCategory {
 // ---------------------------------------------------------------------------
 // Equity
 
-/** Cartas de un jugador: 0, 1 o 2 conocidas (null = desconocida/aleatoria). */
+/** A player's cards: 0, 1 or 2 known (null = unknown/random). */
 export type HoleInput = (Card | null)[];
 
 export interface EquityInput {
@@ -149,19 +150,19 @@ export interface EquityInput {
 }
 
 export interface PlayerEquity {
-  /** Probabilidad de ganar en solitario (0..1). */
+  /** Probability of winning outright (0..1). */
   win: number;
-  /** Probabilidad de empatar (repartir) el bote (0..1). */
+  /** Probability of tying (splitting) the pot (0..1). */
   tie: number;
-  /** Equity total: victorias + parte proporcional de los empates (0..1). */
+  /** Total equity: wins + the proportional share of ties (0..1). */
   equity: number;
-  /** Probabilidad de terminar con cada categoría de mano (0..1). */
+  /** Probability of ending with each hand category (0..1). */
   categories: number[];
 }
 
 export interface EquityResult {
   players: PlayerEquity[];
-  method: 'exacto' | 'montecarlo';
+  method: 'exact' | 'monte_carlo';
   samples: number;
 }
 
@@ -175,7 +176,7 @@ function binom(n: number, k: number): number {
 export const EXACT_LIMIT = 250_000;
 export const DEFAULT_SAMPLES = 40_000;
 
-/** Generador pseudoaleatorio con semilla (mulberry32) para resultados reproducibles en tests. */
+/** Seeded pseudo-random generator (mulberry32) for reproducible test results. */
 export function seededRandom(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
@@ -188,22 +189,22 @@ export function seededRandom(seed: number): () => number {
 }
 
 export function validateInput(input: EquityInput): string | null {
-  if (input.players.length < 2) return 'Hacen falta al menos 2 jugadores.';
+  if (input.players.length < 2) return 'At least 2 players are needed.';
   const seen = new Set<number>();
   for (const c of [...input.board, ...input.players.flat()]) {
     if (!c) continue;
     const id = cardToInt(c);
-    if (seen.has(id)) return 'Hay cartas repetidas.';
+    if (seen.has(id)) return 'There are duplicate cards.';
     seen.add(id);
   }
   const boardKnown = input.board.filter(Boolean).length;
-  if (boardKnown > 5) return 'La mesa tiene como mucho 5 cartas.';
+  if (boardKnown > 5) return 'The board has at most 5 cards.';
   return null;
 }
 
 /**
- * Calcula la equity de cada jugador. Si todas las cartas de los jugadores son conocidas
- * y quedan pocas combinaciones de mesa, se enumeran todas (exacto); si no, Monte Carlo.
+ * Calculates each player's equity. If every player card is known and few board
+ * combinations remain, they are all enumerated (exact); otherwise, Monte Carlo.
  */
 export function calculateEquity(
   input: EquityInput,
@@ -258,7 +259,7 @@ export function calculateEquity(
   let method: EquityResult['method'];
 
   if (totalMissingHole === 0 && binom(deck.length, missingBoard) <= EXACT_LIMIT) {
-    method = 'exacto';
+    method = 'exact';
     const fullBoard = [...board, 0, 0, 0, 0, 0].slice(0, 5);
     const rec = (start: number, depth: number) => {
       if (depth === missingBoard) {
@@ -273,7 +274,7 @@ export function calculateEquity(
     };
     rec(0, 0);
   } else {
-    method = 'montecarlo';
+    method = 'monte_carlo';
     const random = options.random ?? Math.random;
     const target = options.samples ?? DEFAULT_SAMPLES;
     const need = missingBoard + totalMissingHole;
@@ -281,7 +282,7 @@ export function calculateEquity(
     const fullBoard = new Array<number>(5);
     const fullHoles = holes.map((h) => [h[0] ?? 0, h[1] ?? 0]);
     for (; samples < target; samples++) {
-      // Fisher–Yates parcial: solo las primeras `need` posiciones
+      // Partial Fisher–Yates: only the first `need` positions
       for (let i = 0; i < need; i++) {
         const j = i + Math.floor(random() * (d.length - i));
         const t = d[i];
@@ -311,7 +312,7 @@ export function calculateEquity(
   };
 }
 
-/** Mano actual (con las cartas conocidas) de un jugador, si tiene al menos 5 cartas. */
+/** A player's current hand (with the known cards), if there are at least 5 cards. */
 export function currentHand(hole: HoleInput, board: (Card | null)[]): HandCategory | null {
   const cards = [...hole, ...board].filter((c): c is Card => !!c).map(cardToInt);
   if (cards.length < 5 || hole.filter(Boolean).length < 2) return null;

@@ -1,6 +1,6 @@
-// Preferencias de Lee la mesa en localStorage (siempre envuelto en try/catch).
+// Read the Board preferences in localStorage (always wrapped in try/catch).
 
-const BALANCED_KEY = 'lee-la-mesa:equilibrado';
+const BALANCED_KEY = 'pokertoolbox:read-the-board:balanced';
 
 export function loadBalanced(): boolean {
   try {
@@ -14,6 +14,6 @@ export function saveBalanced(value: boolean): void {
   try {
     localStorage.setItem(BALANCED_KEY, value ? '1' : '0');
   } catch {
-    // ignorar
+    // ignore
   }
 }

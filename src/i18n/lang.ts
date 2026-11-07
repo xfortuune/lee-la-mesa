@@ -1,4 +1,4 @@
-// Idioma de la interfaz. Inglés por defecto; la elección se guarda en localStorage.
+// Interface language. English by default; the choice is stored in localStorage.
 import { createContext, useContext } from 'react';
 
 export type Lang = 'en' | 'es';
@@ -20,7 +20,7 @@ export function saveLang(lang: Lang): void {
   try {
     localStorage.setItem(KEY, lang);
   } catch {
-    // sin almacenamiento: el idioma vive solo en esta sesión
+    // no storage: the language only lives for this session
   }
 }
 
@@ -35,7 +35,7 @@ export function useLang(): LangState {
   return useContext(LangContext);
 }
 
-/** Elige el texto del idioma actual: pick(lang, { en: '…', es: '…' }). */
+/** Picks the text for the current language: pick(lang, { en: '…', es: '…' }). */
 export function pick<T>(lang: Lang, texts: Record<Lang, T>): T {
   return texts[lang];
 }

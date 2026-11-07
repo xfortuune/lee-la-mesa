@@ -7,7 +7,7 @@ interface Response {
   error?: string;
 }
 
-/** Recalcula la equity en un Web Worker cada vez que cambia la entrada (con un pequeño retardo). */
+/** Recalculates equity in a Web Worker whenever the input changes (with a short debounce). */
 export function useEquity(input: EquityInput) {
   const key = JSON.stringify(input);
   const [state, setState] = useState<{ key: string; result: EquityResult | null; error: string | null }>({

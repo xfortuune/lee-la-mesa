@@ -25,10 +25,10 @@ import {
 } from '../../components/Trainer';
 import { EMPTY_SCORE, type Score, loadScore, recordResults, saveScore } from '../../lib/score';
 import { useLang } from '../../i18n/lang';
-import { SCORE_KEYS, TOOLS } from '../registry';
+import { SCORE_KEYS, toolById } from '../registry';
 
-const SCORE_KEY = SCORE_KEYS.leeLaMesa;
-const TOOL = TOOLS.find((t) => t.id === 'lee-la-mesa')!;
+const SCORE_KEY = SCORE_KEYS.readTheBoard;
+const TOOL = toolById('read-the-board');
 
 const T = {
   en: {
@@ -59,7 +59,7 @@ const T = {
   },
 };
 
-export default function LeeLaMesa() {
+export default function ReadTheBoard() {
   const { lang } = useLang();
   const t = T[lang];
   const [balanced, setBalanced] = useState<boolean>(loadBalanced);
@@ -76,7 +76,7 @@ export default function LeeLaMesa() {
   const correctStrength = result.strength;
   const canCheck = coordAnswer !== null && strengthAnswer !== null && !checked;
 
-  // Tras comprobar, desplaza para que se vean la explicación y "Siguiente mano".
+  // After checking, scroll so the explanation and "Next hand" are visible.
   const footerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (checked) footerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -130,7 +130,7 @@ export default function LeeLaMesa() {
         aria-label={t.table}
         className="neon-border relative overflow-hidden rounded-[2.25rem] bg-[radial-gradient(ellipse_at_center,_#0f2a3a_0%,_#0b1530_45%,_#070918_100%)] px-3 py-6 shadow-[0_0_60px_-20px_var(--color-neon-cyan),inset_0_0_60px_rgba(0,0,0,0.6)] sm:py-9"
       >
-        {/* anillo holográfico */}
+        {/* holographic ring */}
         <div className="pointer-events-none absolute inset-3 animate-glow rounded-[50%] border border-neon-cyan/20 shadow-[inset_0_0_40px_-10px_var(--color-neon-cyan)] sm:inset-5" />
         <div className="pointer-events-none absolute inset-x-10 top-1/2 h-px bg-gradient-to-r from-transparent via-neon-violet/30 to-transparent" />
 
@@ -180,7 +180,7 @@ export default function LeeLaMesa() {
           value={strengthAnswer}
           correct={checked ? correctStrength : null}
           onChange={setStrengthAnswer}
-          // Móvil: 3 arriba y 2 abajo; escritorio: los 5 en una fila.
+          // Mobile: 3 on top and 2 below; desktop: all 5 in one row.
           gridClass="grid-cols-6 sm:grid-cols-5 [&>*]:col-span-2 [&>*:nth-child(n+4)]:col-span-3 sm:[&>*]:col-span-1 sm:[&>*:nth-child(n+4)]:col-span-1"
         />
       </section>
