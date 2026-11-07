@@ -1,0 +1,33 @@
+Winamax Poker - ESCAPE "Floride" - HandId: #23153416-153079-1794055978 - Holdem no limit (0.05€/0.10€) - 2026/11/07 12:52:58 UTC
+Table: 'Floride' 6-max (real money) Seat #6 is the button
+Seat 1: Hero (10.05€)
+Seat 2: Player2 (11.98€)
+Seat 3: Player3 (13.82€)
+Seat 4: Player4 (2.75€)
+Seat 5: Player5 (8.71€)
+Seat 6: Player6 (17.33€)
+*** ANTE/BLINDS ***
+Hero posts small blind 0.05€
+Player2 posts big blind 0.10€
+Dealt to Hero [5h 5s]
+*** PRE-FLOP ***
+Player3 folds
+Player4 raises 0.15€ to 0.25€
+Player5 folds
+Player6 folds
+Hero raises 0.55€ to 0.80€
+Player2 folds
+Player4 raises 1.95€ to 2.75€ and is all-in
+Hero calls 1.95€
+*** FLOP *** [6c Ad Qs]
+*** TURN *** [6c Ad Qs][5d]
+*** RIVER *** [6c Ad Qs 5d][2c]
+*** SHOW DOWN ***
+Player4 shows [Th Td] (One pair : Tens)
+Hero shows [5h 5s] (Trips of 5)
+Hero collected 5.04€ from pot
+*** SUMMARY ***
+Total pot 5.04€ | Rake 0.56€
+Board: [6c Ad Qs 5d 2c]
+Seat 1: Hero (small blind) showed [5h 5s] and won 5.04€ with Trips of 5
+Seat 4: Player4 showed [Th Td] and lost with One pair : Tens

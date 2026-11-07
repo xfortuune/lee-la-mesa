@@ -9,10 +9,10 @@ import {
   Scoreboard,
   ShortcutHint,
 } from '../../components/Trainer';
-import { SUIT_TEXT, cardKey } from '../../components/cardStyles';
+import { CardChip } from '../../components/CardChip';
+import { cardKey } from '../../components/cardStyles';
 import { EMPTY_SCORE, type Score, loadScore, recordResults, saveScore } from '../../lib/score';
 import {
-  type Card,
   type OutReason,
   type OutsDeal,
   RANKS,
@@ -90,17 +90,6 @@ const REASON_COLOR: Record<OutReason, string> = {
   pair: '#94a3b8',
   high_card: '#94a3b8',
 };
-
-function CardChip({ card }: { card: Card }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-md bg-gradient-to-br from-white to-slate-200 px-1.5 py-0.5 font-mono text-xs font-bold leading-none ${SUIT_TEXT[card.suit]}`}
-    >
-      {rankLabel(card.rank)}
-      {card.suit}
-    </span>
-  );
-}
 
 /** Map of the 52 cards: yours and the board dimmed, outs lit up by type. */
 function OutsMap({ known, outColor }: { known: Set<string>; outColor: Map<string, string> }) {

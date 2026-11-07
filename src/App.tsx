@@ -4,6 +4,7 @@ import { Glossary } from './pages/Glossary';
 import { Home } from './pages/Home';
 import { useHashRoute } from './router';
 import Calculator from './tools/calculator/Calculator';
+import HandReview from './tools/hand-review/HandReview';
 import OutsTrainer from './tools/outs/OutsTrainer';
 import ReadTheBoard from './tools/read-the-board/ReadTheBoard';
 import { APP_NAME, TOOLS } from './tools/registry';
@@ -24,6 +25,8 @@ export default function App() {
       return <Calculator />;
     case 'outs':
       return <OutsTrainer />;
+    case 'hand-review':
+      return <HandReview />;
     case 'glossary':
       return <Glossary />;
     default:

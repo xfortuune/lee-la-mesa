@@ -10,7 +10,7 @@ switch at the top right changes the whole site and the choice is remembered.
 | 01 | Read the Board | `#/read-the-board` | Available |
 | 02 | Calculator | `#/calculator` | Available |
 | 03 | Outs | `#/outs` | Available |
-| 04 | — | — | Coming soon |
+| 04 | Hand Review | `#/hand-review` | Available (AI review via copy & paste) |
 | 05 | — | — | Coming soon |
 | 06 | Glossary | `#/glossary` | Available |
 
@@ -46,6 +46,18 @@ Outs trainer: deals a hand with a draw (or overcards, a pair…) on the flop or 
 how many outs you have and your odds of hitting with the rule of 2 and 4. After checking it
 shows the outs grouped by hand, a map of the 52 cards and the exact %. Rules in `NOTES.md`.
 
+## 04 · Hand Review
+
+Paste a Winamax hand — the replayer link or the hand history text (as PokerTracker shows it) —
+and get, for each of Hero's decisions, the pot, pot odds, SPR and equity (vs random hands and vs
+the cards shown at showdown). For now: Winamax No-Limit Hold'em cash games only.
+
+- **Replayer links**: the hand is downloaded from Winamax's public JSON
+  (`poker-assets.winamax.es/replayer/hand/…`), which allows cross-origin requests.
+- **AI review**: for now the tool builds a ready-to-paste prompt for Claude or ChatGPT, with
+  opponents' names replaced by their positions. Automatic analysis (a small server holding an
+  API key) is planned.
+
 ## 06 · Glossary
 
 380 poker terms collected from the
@@ -73,6 +85,9 @@ Every push to `main` runs the tests and deploys to GitHub Pages (`.github/workfl
   - `deal.ts` — random and balanced dealing.
   - `equity.ts` — hand evaluator and equity calculation.
   - `outs.ts` — counting outs, rule of 2 and 4, and dealing spots.
+  - `hand-history.ts`, `winamax.ts` — hand history model and Winamax parsers (text, replayer JSON, links).
+  - `hand-analysis.ts` — positions, pot odds, SPR and equity per decision, and the AI prompt.
+  - `fixtures/` — anonymised sample hands for the tests.
   - `*.test.ts` — tests.
 - `src/glossary/` — glossary terms (EN + ES), search and term of the day.
 - `src/i18n/` — interface language (context, stored in localStorage). Each screen keeps its own
@@ -80,7 +95,7 @@ Every push to `main` runs the tests and deploys to GitHub Pages (`.github/workfl
 - `src/pages/` — home page (hub) and glossary page.
 - `src/router.ts` — minimal hash router, with redirects from the old Spanish routes.
 - `src/tools/registry.ts` — list of hub tools.
-- `src/tools/read-the-board/`, `src/tools/calculator/`, `src/tools/outs/` — tool UIs.
+- `src/tools/read-the-board/`, `src/tools/calculator/`, `src/tools/outs/`, `src/tools/hand-review/` — tool UIs.
 - `src/components/` — shared components (cards, header, trainer pieces, language switch).
 - `src/lib/` — shared score storage and the migration of old localStorage keys.
 - `NOTES.md` — cases the rules do not cover clearly and the provisional decisions taken.

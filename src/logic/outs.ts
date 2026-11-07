@@ -13,10 +13,10 @@ export interface OutGroup {
   cards: Card[];
 }
 
-export type Street = 'flop' | 'turn';
+export type OutsStreet = 'flop' | 'turn';
 
 export interface OutsResult {
-  street: Street;
+  street: OutsStreet;
   /** Your current hand. */
   current: HandCategory;
   outs: Card[];
@@ -80,7 +80,7 @@ export function computeOuts(hole: Card[], board: Card[], lang: Lang = 'en'): Out
   if (hole.length !== 2) throw new Error('Two hole cards are required.');
   if (board.length !== 3 && board.length !== 4) throw new Error('The board must have 3 (flop) or 4 (turn) cards.');
 
-  const street: Street = board.length === 3 ? 'flop' : 'turn';
+  const street: OutsStreet = board.length === 3 ? 'flop' : 'turn';
   const known = new Set([...hole, ...board].map(cardToInt));
   const unseenCards = fullDeck().filter((c) => !known.has(cardToInt(c)));
   const byReason = new Map<OutReason, Card[]>();
@@ -154,7 +154,7 @@ function isPaired(cards: Card[]): boolean {
  * and at least two outs. 70% of the time the spot has a draw (flush or straight).
  */
 export function dealOuts(random: () => number = Math.random): OutsDeal {
-  const street: Street = random() < 0.5 ? 'flop' : 'turn';
+  const street: OutsStreet = random() < 0.5 ? 'flop' : 'turn';
   const wantDraw = random() < 0.7;
   for (let i = 0; i < 5000; i++) {
     const deck = shuffle(fullDeck(), random);

@@ -13,7 +13,7 @@ export const SCORE_KEYS = {
   outs: 'pokertoolbox:score:outs',
 };
 
-export type ToolId = 'read-the-board' | 'calculator' | 'outs' | 'tool-4' | 'tool-5' | 'glossary';
+export type ToolId = 'read-the-board' | 'calculator' | 'outs' | 'hand-review' | 'tool-5' | 'glossary';
 
 export interface Tool {
   /** Also the URL route: #/<id>. */
@@ -93,19 +93,25 @@ export const TOOLS: Tool[] = [
     scoreKey: SCORE_KEYS.outs,
   },
   {
-    id: 'tool-4',
+    id: 'hand-review',
     index: '04',
     text: {
-      en: { name: 'Tool 4', tagline: 'Under construction', description: 'A new training tool is coming soon.' },
+      en: {
+        name: 'Hand Review',
+        tagline: 'Analyse your hands',
+        description:
+          'Paste a Winamax hand (replayer link or text) and get the key numbers of each decision, ready for an AI review.',
+      },
       es: {
-        name: 'Herramienta 4',
-        tagline: 'En construcción',
-        description: 'Una nueva herramienta de entrenamiento llegará pronto.',
+        name: 'Revisión de manos',
+        tagline: 'Analiza tus manos',
+        description:
+          'Pega una mano de Winamax (enlace del replayer o texto) y obtén los números clave de cada decisión, listos para revisarla con IA.',
       },
     },
     glyph: '♥',
     accent: 'var(--color-neon-lime)',
-    ready: false,
+    ready: true,
   },
   {
     id: 'tool-5',

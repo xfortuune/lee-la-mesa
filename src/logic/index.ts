@@ -4,3 +4,6 @@ export * from './strength';
 export * from './deal';
 export * from './equity';
 export * from './outs';
+export * from './hand-history';
+export * from './winamax';
+export * from './hand-analysis';

@@ -1,0 +1,384 @@
+[
+ {
+  "CUR": {
+   "DATAS": {
+    "CARDS_HISTORY": {
+     "Hero": [
+      "5h",
+      "5s"
+     ]
+    },
+    "GAME": {
+     "BB": "1",
+     "BETTING": "0.05-0.1-no-limit",
+     "DEALER": "5",
+     "GOFAST_ID": "23153416",
+     "MONEY": "real",
+     "NAME": "gf-99443164510700364#004",
+     "PNAME": "Floride",
+     "PUID": "23153416",
+     "SB": "0",
+     "TABLE_UID": "99443164510683140",
+     "TYPE": "GF",
+     "VARIANT": "holdem",
+     "TIMER_DURATION": 20
+    },
+    "PLAYER_LOGIN": "Hero",
+    "POCKET_CARDS": [
+     "5h",
+     "5s"
+    ],
+    "RESULT": {
+     "CONTRIBS": [
+      {
+       "AMOUNT": "2.75",
+       "LOGIN": "Hero"
+      },
+      {
+       "AMOUNT": "0.10",
+       "LOGIN": "Player2"
+      },
+      {
+       "AMOUNT": "2.75",
+       "LOGIN": "Player4"
+      }
+     ],
+     "DATE": "1794055997",
+     "EVALS": [
+      {
+       "HANDTYPE": "high",
+       "PLAYERS": [
+        {
+         "EVAL_CARDS": "2074,5",
+         "LOGIN": "Hero",
+         "SCORE": "50579968",
+         "USED_CARDS": [
+          "5d",
+          "5h",
+          "5s",
+          "Ad",
+          "Qs"
+         ]
+        },
+        {
+         "EVAL_CARDS": "2072,{2084}",
+         "LOGIN": "Player4",
+         "SCORE": "17353280",
+         "USED_CARDS": [
+          "Th",
+          "Td",
+          "Ad",
+          "Qs",
+          "6c"
+         ]
+        }
+       ]
+      }
+     ],
+     "LOOSERS": [
+      {
+       "EVAL_CARDS": "2072,{2084}",
+       "HAND": [
+        "Th",
+        "Td"
+       ],
+       "HANDTYPE": "high",
+       "HAND_STATUS": "",
+       "KILLEDBY": [
+        {
+         "L": "Hero"
+        }
+       ],
+       "LOGIN": "Player4",
+       "SEAT_ID": "3",
+       "USED_CARDS": [
+        "Th",
+        "Td",
+        "Ad",
+        "Qs",
+        "6c"
+       ]
+      }
+     ],
+     "RAKE": "0.56",
+     "WINNERS": [
+      {
+       "AMOUNT": "5.04",
+       "EVAL_CARDS": "2074,5",
+       "HAND": [
+        "5h",
+        "5s"
+       ],
+       "HANDTYPE": "high",
+       "LOGIN": "Hero",
+       "POT_ID": "0",
+       "SEAT_ID": "0",
+       "USED_CARDS": [
+        "5d",
+        "5h",
+        "5s",
+        "Ad",
+        "Qs"
+       ]
+      }
+     ]
+    },
+    "ROUNDS": [
+     {
+      "ACTIONS": [
+       {
+        "ACTION": "posts SB",
+        "AMOUNT": "0.05",
+        "DATE": "1794055978",
+        "DATEMS": "1794055978690",
+        "LOGIN": "Hero"
+       },
+       {
+        "ACTION": "posts BB",
+        "AMOUNT": "0.10",
+        "DATE": "1794055978",
+        "DATEMS": "1794055978690",
+        "LOGIN": "Player2"
+       }
+      ],
+      "BOARD": [],
+      "DATE": "1794055978",
+      "ROUND": "ANTE/BLINDS"
+     },
+     {
+      "ACTIONS": [
+       {
+        "ACTION": "fold",
+        "AMOUNT": "0",
+        "DATE": "1794055980",
+        "DATEMS": "1794055980069",
+        "LOGIN": "Player3"
+       },
+       {
+        "ACTION": "raise",
+        "AMOUNT": "0.25",
+        "DATE": "1794055980",
+        "DATEMS": "1794055980783",
+        "LOGIN": "Player4"
+       },
+       {
+        "ACTION": "fold",
+        "AMOUNT": "0",
+        "DATE": "1794055980",
+        "DATEMS": "1794055980783",
+        "LOGIN": "Player5"
+       },
+       {
+        "ACTION": "fold",
+        "AMOUNT": "0",
+        "DATE": "1794055983",
+        "DATEMS": "1794055983109",
+        "LOGIN": "Player6"
+       },
+       {
+        "ACTION": "raise",
+        "AMOUNT": "0.75",
+        "DATE": "1794055987",
+        "DATEMS": "1794055987013",
+        "LOGIN": "Hero"
+       },
+       {
+        "ACTION": "fold",
+        "AMOUNT": "0",
+        "DATE": "1794055988",
+        "DATEMS": "1794055988971",
+        "LOGIN": "Player2"
+       },
+       {
+        "ACTION": "raise",
+        "AMOUNT": "2.50",
+        "DATE": "1794055989",
+        "DATEMS": "1794055989973",
+        "LOGIN": "Player4"
+       },
+       {
+        "ACTION": "call",
+        "AMOUNT": "1.95",
+        "DATE": "1794055991",
+        "DATEMS": "1794055991212",
+        "LOGIN": "Hero"
+       }
+      ],
+      "BOARD": [],
+      "DATE": "1794055978",
+      "DEALT": [
+       {
+        "CARDS": [
+         "X",
+         "X"
+        ],
+        "LOGIN": "Player3"
+       },
+       {
+        "CARDS": [
+         "X",
+         "X"
+        ],
+        "LOGIN": "Player4"
+       },
+       {
+        "CARDS": [
+         "X",
+         "X"
+        ],
+        "LOGIN": "Player5"
+       },
+       {
+        "CARDS": [
+         "X",
+         "X"
+        ],
+        "LOGIN": "Player6"
+       },
+       {
+        "CARDS": [
+         "X",
+         "X"
+        ],
+        "LOGIN": "Hero"
+       },
+       {
+        "CARDS": [
+         "X",
+         "X"
+        ],
+        "LOGIN": "Player2"
+       }
+      ],
+      "EQUITIES": [
+       {
+        "EQ": "19.04",
+        "LOGIN": "Hero"
+       },
+       {
+        "EQ": "80.96",
+        "LOGIN": "Player4"
+       }
+      ],
+      "ROUND": "pre-flop"
+     },
+     {
+      "ACTIONS": [],
+      "BOARD": [
+       "6c",
+       "Ad",
+       "Qs"
+      ],
+      "DATE": "1794055992",
+      "EQUITIES": [
+       {
+        "EQ": "8.38",
+        "LOGIN": "Hero"
+       },
+       {
+        "EQ": "91.62",
+        "LOGIN": "Player4"
+       }
+      ],
+      "ROUND": "flop"
+     },
+     {
+      "ACTIONS": [],
+      "BOARD": [
+       "6c",
+       "Ad",
+       "Qs",
+       "5d"
+      ],
+      "DATE": "1794055994",
+      "EQUITIES": [
+       {
+        "EQ": "95.45",
+        "LOGIN": "Hero"
+       },
+       {
+        "EQ": "4.55",
+        "LOGIN": "Player4"
+       }
+      ],
+      "ROUND": "turn"
+     },
+     {
+      "ACTIONS": [],
+      "BOARD": [
+       "6c",
+       "Ad",
+       "Qs",
+       "5d",
+       "2c"
+      ],
+      "DATE": "1794055995",
+      "EQUITIES": [
+       {
+        "EQ": "100",
+        "LOGIN": "Hero"
+       },
+       {
+        "EQ": "0",
+        "LOGIN": "Player4"
+       }
+      ],
+      "ROUND": "river"
+     }
+    ],
+    "SEATS": [
+     {
+      "PLAYER": {
+       "LOGIN": "Hero",
+       "MONEY": "10.05"
+      },
+      "SEAT_ID": "0"
+     },
+     {
+      "PLAYER": {
+       "LOGIN": "Player2",
+       "MONEY": "11.98"
+      },
+      "SEAT_ID": "1"
+     },
+     {
+      "PLAYER": {
+       "LOGIN": "Player3",
+       "MONEY": "13.82"
+      },
+      "SEAT_ID": "2"
+     },
+     {
+      "PLAYER": {
+       "LOGIN": "Player4",
+       "MONEY": "2.75"
+      },
+      "SEAT_ID": "3"
+     },
+     {
+      "PLAYER": {
+       "LOGIN": "Player5",
+       "MONEY": "8.71"
+      },
+      "SEAT_ID": "4"
+     },
+     {
+      "PLAYER": {
+       "LOGIN": "Player6",
+       "MONEY": "17.33"
+      },
+      "SEAT_ID": "5"
+     }
+    ],
+    "THEME_ID": "holdup",
+    "THEME": "holdup"
+   },
+   "HAND_ID": "23153416-153079-1794055978",
+   "PREV_HAND_ID": "",
+   "VER": {
+    "F": "holdem",
+    "N": "20"
+   }
+  }
+ }
+]
