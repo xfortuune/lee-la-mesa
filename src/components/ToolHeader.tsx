@@ -10,7 +10,7 @@ export function ToolHeader({
 }: {
   title: string;
   index?: string;
-  /** Sustituye a "Hold'em Lab · Herramienta NN". */
+  /** Sustituye a "PokerToolBox · Herramienta NN". */
   subtitle?: string;
   actions?: ReactNode;
 }) {

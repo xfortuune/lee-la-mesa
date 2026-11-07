@@ -1,4 +1,4 @@
-// Términos C, D y E. Definiciones propias, redactadas para Hold'em Lab.
+// Términos C, D y E. Definiciones propias, redactadas para PokerToolBox.
 import type { Term } from './types';
 
 export const TERMS_2: Term[] = [

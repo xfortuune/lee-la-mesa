@@ -117,8 +117,9 @@ export function Home() {
           <div className="neon-border grid h-11 w-11 place-items-center rounded-xl bg-white/[0.04] text-xl text-neon-cyan shadow-[0_0_24px_-6px_var(--color-neon-cyan)]">
             ♠
           </div>
-          <span className="bg-gradient-to-r from-white via-neon-cyan to-neon-violet bg-clip-text text-lg font-bold uppercase tracking-[0.15em] text-transparent">
-            {APP_NAME}
+          <span className="text-xl font-bold tracking-tight text-white" aria-label={APP_NAME}>
+            Poker
+            <span className="bg-gradient-to-r from-neon-cyan to-neon-violet bg-clip-text text-transparent">ToolBox</span>
           </span>
         </div>
         <span className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.2em] text-slate-400 sm:flex">

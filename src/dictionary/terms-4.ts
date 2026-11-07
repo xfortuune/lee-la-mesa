@@ -1,4 +1,4 @@
-// Términos P a Z. Definiciones propias, redactadas para Hold'em Lab.
+// Términos P a Z. Definiciones propias, redactadas para PokerToolBox.
 import type { Term } from './types';
 
 export const TERMS_4: Term[] = [

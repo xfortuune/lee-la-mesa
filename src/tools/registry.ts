@@ -1,7 +1,10 @@
 // Registro de herramientas del hub. Para añadir una nueva: crea su carpeta en
 // src/tools/, añade aquí su entrada y su componente en src/App.tsx.
 
-export const APP_NAME = "Hold'em Lab";
+export const APP_NAME = 'PokerToolBox';
+
+/** Dominio previsto del proyecto. */
+export const APP_DOMAIN = 'pokertoolbox.com';
 
 /** Claves de localStorage del marcador de cada entrenador. */
 export const SCORE_KEYS = {

@@ -1,4 +1,4 @@
-// Términos 0–9, A y B. Definiciones propias, redactadas para Hold'em Lab.
+// Términos 0–9, A y B. Definiciones propias, redactadas para PokerToolBox.
 import type { Term } from './types';
 
 export const TERMS_1: Term[] = [

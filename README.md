@@ -1,4 +1,6 @@
-# Hold'em Lab ♠
+# PokerToolBox ♠
+
+Web: https://xfortuune.github.io/lee-la-mesa/ · dominio previsto: **pokertoolbox.com**
 
 Hub de herramientas de práctica para Texas Hold'em. La página de inicio da acceso a
 seis herramientas (las rutas usan hash: `#/lee-la-mesa`…). Se añaden en

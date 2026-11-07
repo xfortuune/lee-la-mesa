@@ -1,4 +1,4 @@
-// Términos F a O. Definiciones propias, redactadas para Hold'em Lab.
+// Términos F a O. Definiciones propias, redactadas para PokerToolBox.
 import type { Term } from './types';
 
 export const TERMS_3: Term[] = [
