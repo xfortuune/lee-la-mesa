@@ -1,6 +1,7 @@
 // Outs: cartas que, al salir en la siguiente calle, mejoran tu mano.
-import { type Card, cardsToString, fullDeck, joinEs, parseCards, shuffle } from './cards';
-import { HAND_CATEGORIES, type HandCategory, cardToInt, categoryOf, evaluate } from './equity';
+import type { Lang } from '../i18n/lang';
+import { type Card, cardsToString, fullDeck, joinList, parseCards, shuffle } from './cards';
+import { HAND_CATEGORIES, HAND_LABELS, type HandCategory, cardToInt, categoryOf, evaluate } from './equity';
 
 const CAT = Object.fromEntries(HAND_CATEGORIES.map((c, i) => [c, i])) as Record<HandCategory, number>;
 
@@ -69,12 +70,13 @@ function binom2(n: number): number {
   return (n * (n - 1)) / 2;
 }
 
-function describeGroup(g: OutGroup): string {
+function describeGroup(g: OutGroup, lang: Lang): string {
   const n = g.cards.length;
-  return `${g.reason.toLowerCase()} (${n} out${n === 1 ? '' : 's'}: ${cardsToString(g.cards)})`;
+  return `${HAND_LABELS[lang][g.reason].toLowerCase()} (${n} out${n === 1 ? '' : 's'}: ${cardsToString(g.cards)})`;
 }
 
-export function computeOuts(hole: Card[], board: Card[]): OutsResult {
+/** Cuenta los outs. `lang` solo afecta al texto de la explicación. */
+export function computeOuts(hole: Card[], board: Card[], lang: Lang = 'es'): OutsResult {
   if (hole.length !== 2) throw new Error('Se necesitan 2 cartas en mano.');
   if (board.length !== 3 && board.length !== 4) throw new Error('La mesa debe tener 3 (flop) o 4 (turn) cartas.');
 
@@ -97,17 +99,25 @@ export function computeOuts(hole: Card[], board: Card[]): OutsResult {
   const exact = street === 'flop' ? (1 - binom2(unseen - n) / binom2(unseen)) * 100 : (n / unseen) * 100;
   const current = cat([...hole, ...board]);
 
+  const now = HAND_LABELS[lang][current].toLowerCase();
+  const list = joinList(groups.map((g) => describeGroup(g, lang)), lang);
   const reason =
-    n === 0
-      ? `Ahora tienes ${current.toLowerCase()} y ninguna carta te hace mejorar.`
-      : `Ahora tienes ${current.toLowerCase()}. Te mejoran ${n} cartas: ${joinEs(groups.map(describeGroup))}.`;
+    lang === 'en'
+      ? n === 0
+        ? `You currently have ${now} and no card improves you.`
+        : `You currently have ${now}. ${n} cards improve you: ${list}.`
+      : n === 0
+        ? `Ahora tienes ${now} y ninguna carta te hace mejorar.`
+        : `Ahora tienes ${now}. Te mejoran ${n} cartas: ${list}.`;
 
   return { street, current, outs, groups, unseen, factor, estimate: n * factor, exact, reason };
 }
 
 /** Texto de la regla: "9 outs × 4 = 36 %". */
-export function ruleText(r: OutsResult): string {
-  return `Regla del ${r.factor}: ${r.outs.length} outs × ${r.factor} = ${r.estimate} %`;
+export function ruleText(r: OutsResult, lang: Lang = 'es'): string {
+  return lang === 'en'
+    ? `Rule of ${r.factor}: ${r.outs.length} outs × ${r.factor} = ${r.estimate}%`
+    : `Regla del ${r.factor}: ${r.outs.length} outs × ${r.factor} = ${r.estimate} %`;
 }
 
 /** Opciones de porcentaje para la pregunta (la correcta + 3 distractores), ordenadas. */

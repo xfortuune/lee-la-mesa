@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { SUIT_NAME, SUIT_TEXT, cardKey } from '../../components/cardStyles';
+import { SUIT_NAME, SUIT_TEXT, cardKey, cardName } from '../../components/cardStyles';
+import { useLang } from '../../i18n/lang';
 import { type Card, RANKS, SUITS, rankLabel } from '../../logic';
 
 interface Props {
@@ -13,6 +14,8 @@ interface Props {
 }
 
 export function CardPicker({ title, current, used, onPick, onClear, onClose }: Props) {
+  const { lang } = useLang();
+  const en = lang === 'en';
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -31,13 +34,13 @@ export function CardPicker({ title, current, used, onPick, onClear, onClose }: P
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={`Elegir carta: ${title}`}
+        aria-label={`${en ? 'Pick a card' : 'Elegir carta'}: ${title}`}
         className="neon-border w-full max-w-3xl animate-rise rounded-t-3xl bg-[#0a0c1c]/95 p-4 shadow-[0_0_80px_-20px_rgba(34,228,255,0.5)] sm:rounded-3xl sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-neon-cyan/80">Elegir carta</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-neon-cyan/80">{en ? 'Pick a card' : 'Elegir carta'}</p>
             <h2 className="text-lg font-bold text-white">{title}</h2>
           </div>
           <div className="flex gap-2">
@@ -46,12 +49,12 @@ export function CardPicker({ title, current, used, onPick, onClear, onClose }: P
                 onClick={onClear}
                 className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200 transition hover:bg-rose-500/20"
               >
-                Quitar
+                {en ? 'Remove' : 'Quitar'}
               </button>
             )}
             <button
               onClick={onClose}
-              aria-label="Cerrar"
+              aria-label={en ? 'Close' : 'Cerrar'}
               className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-xl text-slate-300 transition hover:border-neon-cyan/50 hover:text-white"
             >
               ×
@@ -61,7 +64,7 @@ export function CardPicker({ title, current, used, onPick, onClear, onClose }: P
 
         <div className="flex flex-col gap-1.5 sm:gap-2">
           {SUITS.map((suit) => (
-            <div key={suit} className="grid grid-cols-13 gap-1 sm:gap-1.5" aria-label={SUIT_NAME[suit]}>
+            <div key={suit} className="grid grid-cols-13 gap-1 sm:gap-1.5" aria-label={SUIT_NAME[lang][suit]}>
               {ranks.map((rank) => {
                 const card = { rank, suit };
                 const k = cardKey(card);
@@ -72,7 +75,7 @@ export function CardPicker({ title, current, used, onPick, onClear, onClose }: P
                     key={k}
                     disabled={taken}
                     onClick={() => onPick(card)}
-                    aria-label={`${rankLabel(rank)} de ${SUIT_NAME[suit]}`}
+                    aria-label={cardName(card, lang)}
                     className={`flex aspect-[5/7] flex-col items-center justify-center rounded-md font-mono leading-none transition sm:rounded-lg ${
                       taken
                         ? 'cursor-not-allowed bg-white/[0.06] text-slate-600 opacity-40'

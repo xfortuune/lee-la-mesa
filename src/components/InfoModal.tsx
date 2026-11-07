@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect } from 'react';
+import { useLang } from '../i18n/lang';
 
 /** Ventana de información (reglas, ayuda) con el estilo del hub. Se cierra con Escape o tocando fuera. */
 export function InfoModal({
@@ -12,6 +13,7 @@ export function InfoModal({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const { lang } = useLang();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -42,7 +44,7 @@ export function InfoModal({
           <button
             onClick={onClose}
             className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-xl text-slate-300 transition hover:border-neon-cyan/50 hover:text-white"
-            aria-label="Cerrar"
+            aria-label={lang === 'en' ? 'Close' : 'Cerrar'}
           >
             ×
           </button>

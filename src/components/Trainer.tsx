@@ -1,5 +1,6 @@
 // Piezas comunes de los entrenadores: opciones de respuesta, corrección, marcador y botón principal.
 import type { ReactNode } from 'react';
+import { useLang } from '../i18n/lang';
 import { type Score, hitRate } from '../lib/score';
 
 interface OptionGroupProps<T extends string | number> {
@@ -65,6 +66,7 @@ export function OptionGroup<T extends string | number>({
 }
 
 export function Feedback({ ok, title, children, delay }: { ok: boolean; title: string; children: ReactNode; delay: number }) {
+  const { lang } = useLang();
   return (
     <div
       style={{ animationDelay: `${delay}ms` }}
@@ -78,7 +80,7 @@ export function Feedback({ ok, title, children, delay }: { ok: boolean; title: s
         }`}
       />
       <p className={`mb-1 flex items-center gap-2 font-semibold ${ok ? 'text-emerald-300' : 'text-rose-300'}`}>
-        <span className="font-mono text-xs">{ok ? '[ OK ]' : '[ FALLO ]'}</span>
+        <span className="font-mono text-xs">{ok ? '[ OK ]' : lang === 'en' ? '[ MISS ]' : '[ FALLO ]'}</span>
         {title}
       </p>
       <div className="text-slate-300">{children}</div>
@@ -103,14 +105,20 @@ function Stat({ label, value, accent, bar }: { label: string; value: string | nu
   );
 }
 
+const SCORE_T = {
+  en: { score: 'Score', hits: 'Correct', misses: 'Wrong', rate: 'Accuracy', streak: 'Streak' },
+  es: { score: 'Marcador', hits: 'Aciertos', misses: 'Fallos', rate: 'Acierto', streak: 'Racha' },
+};
+
 export function Scoreboard({ score }: { score: Score }) {
   const pct = hitRate(score);
+  const t = SCORE_T[useLang().lang];
   return (
-    <section aria-label="Marcador" className="grid grid-cols-4 gap-2">
-      <Stat label="Aciertos" value={score.hits} accent="text-emerald-300" />
-      <Stat label="Fallos" value={score.misses} accent="text-rose-300" />
-      <Stat label="Acierto" value={`${pct}%`} accent="text-white" bar={pct} />
-      <Stat label="Racha" value={score.streak} accent="text-neon-cyan" />
+    <section aria-label={t.score} className="grid grid-cols-4 gap-2">
+      <Stat label={t.hits} value={score.hits} accent="text-emerald-300" />
+      <Stat label={t.misses} value={score.misses} accent="text-rose-300" />
+      <Stat label={t.rate} value={`${pct}%`} accent="text-white" bar={pct} />
+      <Stat label={t.streak} value={score.streak} accent="text-neon-cyan" />
     </section>
   );
 }
@@ -124,6 +132,7 @@ export function PrimaryButton({
   disabled: boolean;
   onClick: () => void;
 }) {
+  const en = useLang().lang === 'en';
   return (
     <button
       onClick={onClick}
@@ -131,28 +140,30 @@ export function PrimaryButton({
       className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-neon-cyan via-[#6aa8ff] to-neon-violet py-4 text-base font-bold uppercase tracking-[0.2em] text-void shadow-[0_0_40px_-8px_var(--color-neon-cyan)] transition hover:shadow-[0_0_50px_-6px_var(--color-neon-violet)] active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-none disabled:bg-white/[0.05] disabled:text-slate-500 disabled:shadow-none"
     >
       <span className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 -skew-x-12 bg-white/40 opacity-0 blur-md transition-all duration-700 group-enabled:group-hover:left-full group-enabled:group-hover:opacity-100" />
-      <span className="relative">{checked ? 'Siguiente mano →' : 'Comprobar'}</span>
+      <span className="relative">{checked ? (en ? 'Next hand →' : 'Siguiente mano →') : en ? 'Check' : 'Comprobar'}</span>
     </button>
   );
 }
 
 export function ResetScoreButton({ onReset }: { onReset: () => void }) {
+  const en = useLang().lang === 'en';
   return (
     <button
       onClick={() => {
-        if (window.confirm('¿Reiniciar el marcador?')) onReset();
+        if (window.confirm(en ? 'Reset the score?' : '¿Reiniciar el marcador?')) onReset();
       }}
       className="font-mono text-xs uppercase tracking-[0.15em] text-slate-500 transition hover:text-rose-300"
     >
-      Reiniciar marcador
+      {en ? 'Reset score' : 'Reiniciar marcador'}
     </button>
   );
 }
 
 export function ShortcutHint() {
+  const en = useLang().lang === 'en';
   return (
     <p className="mt-2 hidden font-mono text-[11px] text-slate-600 sm:block">
-      ⏎ Enter / Espacio — comprobar · siguiente mano
+      {en ? '⏎ Enter / Space — check · next hand' : '⏎ Enter / Espacio — comprobar · siguiente mano'}
     </p>
   );
 }

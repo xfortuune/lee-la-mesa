@@ -1,4 +1,5 @@
 // Evaluador de manos de 5–7 cartas y cálculo de equity (probabilidad de ganar/empatar).
+import type { Lang } from '../i18n/lang';
 import { type Card, SUITS } from './cards';
 
 // Las cartas se codifican como enteros 0..51: rank = (c >> 2) + 2, palo = c & 3.
@@ -23,6 +24,34 @@ export const HAND_CATEGORIES = [
 ] as const;
 
 export type HandCategory = (typeof HAND_CATEGORIES)[number];
+
+/** Nombre de cada jugada para mostrar (las claves de HAND_CATEGORIES son internas, en español). */
+export const HAND_LABELS: Record<Lang, Record<HandCategory | 'Pareja máxima', string>> = {
+  es: {
+    'Carta alta': 'Carta alta',
+    Pareja: 'Pareja',
+    'Dobles parejas': 'Dobles parejas',
+    Trío: 'Trío',
+    Escalera: 'Escalera',
+    Color: 'Color',
+    Full: 'Full',
+    Póker: 'Póker',
+    'Escalera de color': 'Escalera de color',
+    'Pareja máxima': 'Pareja máxima',
+  },
+  en: {
+    'Carta alta': 'High card',
+    Pareja: 'Pair',
+    'Dobles parejas': 'Two pair',
+    Trío: 'Three of a kind',
+    Escalera: 'Straight',
+    Color: 'Flush',
+    Full: 'Full house',
+    Póker: 'Four of a kind',
+    'Escalera de color': 'Straight flush',
+    'Pareja máxima': 'Top pair',
+  },
+};
 
 /** Rango más alto de una escalera dentro de la máscara de rangos (bit r = rango r), o 0. */
 function straightHigh(mask: number): number {

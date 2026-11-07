@@ -1,4 +1,5 @@
-import type { Card, Suit } from '../logic';
+import type { Lang } from '../i18n/lang';
+import { type Card, type Suit, rankLabel } from '../logic';
 
 // Baraja de 4 colores: ♠ negro, ♥ rojo, ♦ azul, ♣ verde.
 export const SUIT_TEXT: Record<Suit, string> = {
@@ -15,12 +16,15 @@ export const SUIT_GLOW: Record<Suit, string> = {
   '♣': 'shadow-[0_0_24px_-4px_rgba(16,185,129,0.6)]',
 };
 
-export const SUIT_NAME: Record<Suit, string> = {
-  '♠': 'picas',
-  '♥': 'corazones',
-  '♦': 'diamantes',
-  '♣': 'tréboles',
+export const SUIT_NAME: Record<Lang, Record<Suit, string>> = {
+  es: { '♠': 'picas', '♥': 'corazones', '♦': 'diamantes', '♣': 'tréboles' },
+  en: { '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' },
 };
+
+/** Nombre accesible de una carta: "A de picas" / "A of spades". */
+export function cardName(c: Card, lang: Lang): string {
+  return `${rankLabel(c.rank)} ${lang === 'en' ? 'of' : 'de'} ${SUIT_NAME[lang][c.suit]}`;
+}
 
 export const CARD_SIZES = {
   md: {

@@ -1,5 +1,6 @@
 // Coordinación de la mesa según el método EducaPoker.
-import { type Card, type Rank, joinEs, rankChar } from './cards';
+import type { Lang } from '../i18n/lang';
+import { type Card, type Rank, joinList, rankChar } from './cards';
 
 export type Coordination =
   | 'extremadamente_coordinada'
@@ -15,11 +16,19 @@ export const FLOP_COORDINATIONS: Coordination[] = [
   'seca',
 ];
 
-export const COORDINATION_LABELS: Record<Coordination, string> = {
-  extremadamente_coordinada: 'Extremadamente coordinada',
-  coordinada: 'Coordinada',
-  semicoordinada: 'Semicoordinada',
-  seca: 'Seca',
+export const COORDINATION_LABELS: Record<Lang, Record<Coordination, string>> = {
+  es: {
+    extremadamente_coordinada: 'Extremadamente coordinada',
+    coordinada: 'Coordinada',
+    semicoordinada: 'Semicoordinada',
+    seca: 'Seca',
+  },
+  en: {
+    extremadamente_coordinada: 'Extremely coordinated',
+    coordinada: 'Coordinated',
+    semicoordinada: 'Semi-coordinated',
+    seca: 'Dry',
+  },
 };
 
 /** Combinaciones de escalera que no cuentan para "coordinada". */
@@ -80,7 +89,10 @@ function suitCounts(board: Card[]): number[] {
   return [...counts.values()];
 }
 
-export function classifyBoard(board: Card[]): CoordinationResult {
+/** Clasifica el flop. `lang` solo afecta al texto de la explicación. */
+export function classifyBoard(board: Card[], lang: Lang = 'es'): CoordinationResult {
+  const en = lang === 'en';
+  const join = (items: string[]) => joinList(items, lang);
   if (board.length !== 3) {
     // Preparado para el turn: allí "extremadamente coordinada" también será
     // tener un proyecto completado con UNA carta en mano.
@@ -103,7 +115,9 @@ export function classifyBoard(board: Card[]): CoordinationResult {
     return {
       ...base,
       coordination: 'extremadamente_coordinada',
-      reason: `Mesa extremadamente coordinada: es monocolor (${board[0].suit}) y además se puede tener escalera (${joinEs(valid)}); hay color, escalera e incluso escalera de color posibles.`,
+      reason: en
+        ? `Extremely coordinated board: it is monotone (${board[0].suit}) and a straight is also possible (${join(valid)}); flushes, straights and even straight flushes are possible.`
+        : `Mesa extremadamente coordinada: es monocolor (${board[0].suit}) y además se puede tener escalera (${join(valid)}); hay color, escalera e incluso escalera de color posibles.`,
     };
   }
 
@@ -112,33 +126,44 @@ export function classifyBoard(board: Card[]): CoordinationResult {
     return {
       ...base,
       coordination: 'coordinada',
-      reason: `Mesa coordinada: las 3 cartas son de ${board[0].suit} (monocolor), con dos cartas de ese palo ya tienes color.`,
+      reason: en
+        ? `Coordinated board: all 3 cards are ${board[0].suit} (monotone), so any two cards of that suit make a flush.`
+        : `Mesa coordinada: las 3 cartas son de ${board[0].suit} (monocolor), con dos cartas de ese palo ya tienes color.`,
     };
   }
   if (valid.length > 0) {
     return {
       ...base,
       coordination: 'coordinada',
-      reason: `Mesa coordinada: con dos cartas se puede tener escalera (${joinEs(valid)}).`,
+      reason: en
+        ? `Coordinated board: two cards can make a straight (${join(valid)}).`
+        : `Mesa coordinada: con dos cartas se puede tener escalera (${join(valid)}).`,
     };
   }
 
   const notes: string[] = [];
-  if (paired) notes.push('una mesa emparejada nunca es coordinada en el flop');
+  if (paired) notes.push(en ? 'a paired board is never coordinated on the flop' : 'una mesa emparejada nunca es coordinada en el flop');
   else if (combos.length > 0)
-    notes.push(`las escaleras posibles (${joinEs(combos)}) son todas excepciones`);
-  else notes.push('no hay escalera posible con dos cartas');
+    notes.push(
+      en
+        ? `the possible straights (${join(combos)}) are all exceptions`
+        : `las escaleras posibles (${join(combos)}) son todas excepciones`,
+    );
+  else notes.push(en ? 'no straight is possible with two cards' : 'no hay escalera posible con dos cartas');
 
   // 1.2 Semicoordinada
   const remaining = [...distinct].filter((r) => r > 5).sort((a, b) => b - a);
   const ignored = [...distinct].filter((r) => r <= 5).sort((a, b) => b - a);
-  if (ignored.length > 0) notes.push(`se ignoran ${joinEs(ignored.map(rankChar))}`);
+  if (ignored.length > 0)
+    notes.push(en ? `${join(ignored.map(rankChar))} ${ignored.length === 1 ? 'is' : 'are'} ignored` : `se ignoran ${join(ignored.map(rankChar))}`);
 
   if (remaining.length < 2) {
     return {
       ...base,
       coordination: 'seca',
-      reason: `Mesa seca: ${notes.join('; ')}; quedan menos de 2 cartas para medir huecos.`,
+      reason: en
+        ? `Dry board: ${notes.join('; ')}; fewer than 2 cards are left to measure gaps.`
+        : `Mesa seca: ${notes.join('; ')}; quedan menos de 2 cartas para medir huecos.`,
     };
   }
 
@@ -150,19 +175,32 @@ export function classifyBoard(board: Card[]): CoordinationResult {
   const between: Rank[] = [];
   for (let r = best.high - 1; r > best.low; r--) between.push(r);
   const limit = flushDraw ? 3 : 2;
-  const gapText =
-    between.length === 0
-      ? `entre ${rankChar(best.high)} y ${rankChar(best.low)} no hay huecos`
-      : `entre ${rankChar(best.high)} y ${rankChar(best.low)} hay ${between.length} hueco${between.length === 1 ? '' : 's'} (${joinEs(between.map(rankChar))})`;
-  const colorText = flushDraw
-    ? 'con proyecto de color se permiten hasta 3 huecos'
-    : 'sin proyecto de color se permiten hasta 2 huecos';
+  const hi = rankChar(best.high);
+  const lo = rankChar(best.low);
+  const n = between.length;
+  const gapList = join(between.map(rankChar));
+  const gapText = en
+    ? n === 0
+      ? `there are no gaps between ${hi} and ${lo}`
+      : `between ${hi} and ${lo} there ${n === 1 ? 'is' : 'are'} ${n} gap${n === 1 ? '' : 's'} (${gapList})`
+    : n === 0
+      ? `entre ${hi} y ${lo} no hay huecos`
+      : `entre ${hi} y ${lo} hay ${n} hueco${n === 1 ? '' : 's'} (${gapList})`;
+  const colorText = en
+    ? flushDraw
+      ? 'with a flush draw up to 3 gaps are allowed'
+      : 'without a flush draw up to 2 gaps are allowed'
+    : flushDraw
+      ? 'con proyecto de color se permiten hasta 3 huecos'
+      : 'sin proyecto de color se permiten hasta 2 huecos';
   const semi = between.length <= limit;
 
   return {
     ...base,
     gap: { ...best, between },
     coordination: semi ? 'semicoordinada' : 'seca',
-    reason: `Mesa ${semi ? 'semicoordinada' : 'seca'}: ${notes.join('; ')}; ${gapText} y ${colorText}.`,
+    reason: en
+      ? `${semi ? 'Semi-coordinated' : 'Dry'} board: ${notes.join('; ')}; ${gapText}, and ${colorText}.`
+      : `Mesa ${semi ? 'semicoordinada' : 'seca'}: ${notes.join('; ')}; ${gapText} y ${colorText}.`,
   };
 }

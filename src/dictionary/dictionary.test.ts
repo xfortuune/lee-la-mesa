@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CATEGORY_LABELS, TERMS, letterOf, normalize, searchTerms, termOfTheDay } from './index';
+import { CATEGORY_LABELS, TERMS, letterOf, localize, normalize, searchTerms, sortedTerms, termOfTheDay } from './index';
+import { TERMS_EN } from './terms-en';
 
 describe('diccionario', () => {
   it('tiene más de 300 términos', () => {
@@ -23,8 +24,37 @@ describe('diccionario', () => {
   it('cada término tiene definición y categoría válida', () => {
     for (const t of TERMS) {
       expect(t.def.length, t.term).toBeGreaterThan(10);
-      expect(Object.keys(CATEGORY_LABELS), t.term).toContain(t.category);
+      expect(Object.keys(CATEGORY_LABELS.es), t.term).toContain(t.category);
     }
+  });
+
+  it('todos los términos tienen versión en inglés, y nada sobra', () => {
+    const missing = TERMS.filter((t) => !TERMS_EN[t.term]).map((t) => t.term);
+    expect(missing).toEqual([]);
+    const known = new Set(TERMS.map((t) => t.term));
+    expect(Object.keys(TERMS_EN).filter((k) => !known.has(k))).toEqual([]);
+  });
+
+  it('los nombres en inglés no se repiten', () => {
+    const seen = new Map<string, string>();
+    const dups: string[] = [];
+    for (const t of TERMS) {
+      const k = normalize(TERMS_EN[t.term].term);
+      if (seen.has(k)) dups.push(`${TERMS_EN[t.term].term} (${seen.get(k)} / ${t.term})`);
+      seen.set(k, t.term);
+    }
+    expect(dups).toEqual([]);
+  });
+
+  it('en inglés: localiza, busca y ordena', () => {
+    const farol = TERMS.find((t) => t.term === 'Farol')!;
+    expect(localize(farol, 'en').term).toBe('Bluff');
+    expect(localize(farol, 'en').aka).toContain('Farol');
+    expect(searchTerms('bluff', TERMS, 'en')[0].term).toBe('Farol');
+    expect(searchTerms('farol', TERMS, 'en')[0].term).toBe('Farol');
+    const en = sortedTerms('en');
+    expect(localize(en[0], 'en').term).toBe('3-bet');
+    expect(letterOf(en.find((t) => t.term === 'Pagar')!, 'en')).toBe('C');
   });
 
   it('está ordenado alfabéticamente con los números primero', () => {

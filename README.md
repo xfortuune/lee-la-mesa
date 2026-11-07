@@ -2,7 +2,8 @@
 
 Web: https://xfortuune.github.io/pokertoolbox/ · dominio previsto: **pokertoolbox.com**
 
-Hub de herramientas de práctica para Texas Hold'em. La página de inicio da acceso a
+Hub de herramientas de práctica para Texas Hold'em, en **inglés** (idioma por defecto) y **español**:
+el botón EN/ES de arriba a la derecha cambia toda la web y la elección se recuerda. La página de inicio da acceso a
 seis herramientas (las rutas usan hash: `#/lee-la-mesa`…). Se añaden en
 `src/tools/registry.ts`.
 
@@ -78,6 +79,9 @@ npm run build    # build de producción en dist/
 - `src/pages/Dictionary.tsx` — página del diccionario (herramienta 06).
 - `src/dictionary/` — términos del diccionario, búsqueda y término del día (con test de duplicados).
 - `src/router.ts` — enrutado mínimo por hash.
+- `src/i18n/` — idioma (contexto, guardado en localStorage). Cada pantalla tiene sus textos `en`/`es`;
+  la lógica recibe el idioma para redactar las explicaciones.
+- `src/dictionary/terms-en-*.ts` — versión en inglés de los 380 términos.
 - `src/tools/registry.ts` — lista de herramientas del hub.
 - `src/tools/lee-la-mesa/` — interfaz de la herramienta 01.
 - `src/tools/calculadora/` — interfaz de la herramienta 02 (con su Web Worker).

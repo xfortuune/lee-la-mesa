@@ -1,4 +1,5 @@
 // Representación básica de cartas y baraja.
+import type { Lang } from '../i18n/lang';
 
 export type Suit = '♠' | '♥' | '♦' | '♣';
 export type Rank = number; // 2..14 (A = 14)
@@ -80,6 +81,12 @@ export function shuffle<T>(items: T[], random: () => number = Math.random): T[] 
 
 /** Lista legible: "Q, J y T". */
 export function joinEs(items: string[]): string {
+  return joinList(items, 'es');
+}
+
+/** Lista legible en el idioma pedido: "Q, J y T" / "Q, J and T". */
+export function joinList(items: string[], lang: Lang): string {
   if (items.length <= 1) return items.join('');
-  return `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`;
+  const and = lang === 'en' ? 'and' : 'y';
+  return `${items.slice(0, -1).join(', ')} ${and} ${items[items.length - 1]}`;
 }

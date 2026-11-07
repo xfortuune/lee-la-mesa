@@ -1,13 +1,15 @@
+import { useLang } from '../i18n/lang';
 import { type Card, rankLabel } from '../logic';
-import { CARD_SIZES, type CardSize, SUIT_GLOW, SUIT_NAME, SUIT_TEXT } from './cardStyles';
+import { CARD_SIZES, type CardSize, SUIT_GLOW, SUIT_TEXT, cardName } from './cardStyles';
 
 export function PlayingCard({ card, delay = 0, size = 'md' }: { card: Card; delay?: number; size?: CardSize }) {
   const s = CARD_SIZES[size];
+  const { lang } = useLang();
   return (
     <div className="[perspective:600px]">
       <div
         role="img"
-        aria-label={`${rankLabel(card.rank)} de ${SUIT_NAME[card.suit]}`}
+        aria-label={cardName(card, lang)}
         style={{ animationDelay: `${delay}ms` }}
         className={`relative flex animate-deal select-none flex-col overflow-hidden bg-gradient-to-br from-white via-slate-50 to-slate-200 ring-1 ring-white/70 ${s.box} ${SUIT_GLOW[card.suit]} ${SUIT_TEXT[card.suit]}`}
       >

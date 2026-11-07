@@ -2,11 +2,79 @@ import { type CSSProperties, useCallback, useMemo, useState } from 'react';
 import { PlayingCard } from '../../components/PlayingCard';
 import { CARD_SIZES, type CardSize, cardKey } from '../../components/cardStyles';
 import { ToolHeader, headerButtonClass } from '../../components/ToolHeader';
-import { type Card, HAND_CATEGORIES, currentHand } from '../../logic';
+import { type Lang, useLang } from '../../i18n/lang';
+import { type Card, HAND_CATEGORIES, HAND_LABELS, currentHand } from '../../logic';
+import { TOOLS } from '../registry';
 import { CardPicker } from './CardPicker';
 import { useEquity } from './useEquity';
 
 const MAX_PLAYERS = 10;
+const TOOL = TOOLS.find((t) => t.id === 'calculadora')!;
+
+const T = {
+  en: {
+    clear: 'Clear',
+    table: 'Table',
+    street: 'Street',
+    players: 'players',
+    playersSection: 'Players',
+    calculating: 'Calculating…',
+    exact: 'Exact',
+    combos: 'combinations',
+    sims: 'simulations',
+    you: 'You',
+    player: 'Player',
+    p: 'P',
+    remove: 'Remove player',
+    favorite: 'Favorite',
+    win: 'Win',
+    tie: 'Tie',
+    now: 'Now',
+    randomHand: 'Random hand',
+    oneRandom: 'One random card',
+    add: 'Add player',
+    atRiver: 'By the river',
+    handOdds: 'Odds of each final hand',
+    hint: 'Tap a slot to pick a card · cards you leave empty are dealt at random',
+    pick: 'Pick',
+    change: 'Change',
+    card: 'card',
+    ofBoard: 'of the board',
+    yourHand: 'your hand',
+    locale: 'en-US',
+  },
+  es: {
+    clear: 'Borrar',
+    table: 'Mesa',
+    street: 'Calle',
+    players: 'jugadores',
+    playersSection: 'Jugadores',
+    calculating: 'Calculando…',
+    exact: 'Exacto',
+    combos: 'combinaciones',
+    sims: 'simulaciones',
+    you: 'Tú',
+    player: 'Jugador',
+    p: 'J',
+    remove: 'Quitar jugador',
+    favorite: 'Favorito',
+    win: 'Gana',
+    tie: 'Empata',
+    now: 'Ahora',
+    randomHand: 'Mano aleatoria',
+    oneRandom: 'Una carta aleatoria',
+    add: 'Añadir jugador',
+    atRiver: 'Al river',
+    handOdds: 'Probabilidad de cada jugada',
+    hint: 'Toca una casilla para elegir carta · las cartas sin elegir se reparten al azar',
+    pick: 'Elegir',
+    change: 'Cambiar',
+    card: 'carta',
+    ofBoard: 'de la mesa',
+    yourHand: 'tu mano',
+    locale: 'es-ES',
+  },
+} satisfies Record<Lang, Record<string, string>>;
 const BOARD_LABELS = ['Flop', 'Flop', 'Flop', 'Turn', 'River'];
 const PLAYER_COLORS = ['#22e4ff', '#a855f7', '#f472b6', '#a3ff6b', '#fbbf24', '#38bdf8', '#fb7185', '#34d399', '#c084fc', '#f97316'];
 
@@ -22,19 +90,22 @@ function CardSlot({
   label,
   active,
   onClick,
+  lang,
 }: {
   card: Card | null;
   size: CardSize;
   label: string;
   active: boolean;
   onClick: () => void;
+  lang: Lang;
 }) {
+  const t = T[lang];
   const box = CARD_SIZES[size].box;
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={card ? `Cambiar ${label}` : `Elegir ${label}`}
+      aria-label={`${card ? t.change : t.pick} ${label}`}
       className={`relative shrink-0 rounded-xl transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neon-cyan ${
         active ? 'ring-2 ring-neon-cyan ring-offset-2 ring-offset-void' : ''
       }`}
@@ -53,6 +124,9 @@ function CardSlot({
 }
 
 export default function Calculadora() {
+  const { lang } = useLang();
+  const t = T[lang];
+  const playerName = (p: number) => (p === 0 ? t.you : `${t.player} ${p + 1}`);
   const [players, setPlayers] = useState(() => emptyPlayers(2));
   const [board, setBoard] = useState(emptyBoard);
   const [picking, setPicking] = useState<Slot | null>(null);
@@ -100,8 +174,8 @@ export default function Calculadora() {
 
   const pickerTitle = (s: Slot) =>
     s.kind === 'board'
-      ? `Mesa · ${BOARD_LABELS[s.i]}${s.i < 3 ? ` ${s.i + 1}` : ''}`
-      : `${s.p === 0 ? 'Tú' : `Jugador ${s.p + 1}`} · carta ${s.i + 1}`;
+      ? `${t.table} · ${BOARD_LABELS[s.i]}${s.i < 3 ? ` ${s.i + 1}` : ''}`
+      : `${playerName(s.p)} · ${t.card} ${s.i + 1}`;
 
   const addPlayer = () => setPlayers((ps) => (ps.length < MAX_PLAYERS ? [...ps, [null, null]] : ps));
   const removePlayer = (p: number) => {
@@ -124,26 +198,28 @@ export default function Calculadora() {
   return (
     <div className="relative mx-auto flex min-h-dvh max-w-5xl flex-col gap-5 px-4 py-5 sm:px-6 sm:py-8">
       <ToolHeader
-        title="Calculadora"
+        title={TOOL.text[lang].name}
         index="02"
         actions={
           <button onClick={clearAll} className={headerButtonClass}>
-            Borrar
+            {t.clear}
           </button>
         }
       />
 
       {/* Mesa */}
       <section
-        aria-label="Mesa"
+        aria-label={t.table}
         className="neon-border relative overflow-hidden rounded-[2.25rem] bg-[radial-gradient(ellipse_at_center,_#0f2a3a_0%,_#0b1530_45%,_#070918_100%)] px-3 py-5 shadow-[0_0_60px_-20px_var(--color-neon-cyan),inset_0_0_60px_rgba(0,0,0,0.6)] sm:py-7"
       >
         <div className="pointer-events-none absolute inset-3 animate-glow rounded-[50%] border border-neon-cyan/20 shadow-[inset_0_0_40px_-10px_var(--color-neon-cyan)] sm:inset-5" />
         <div className="relative flex items-center justify-between px-2 font-mono text-[10px] uppercase tracking-[0.25em] text-slate-500">
           <span>
-            Calle · <span className="text-neon-cyan">{street}</span>
+            {t.street} · <span className="text-neon-cyan">{street}</span>
           </span>
-          <span>{players.length} jugadores</span>
+          <span>
+            {players.length} {t.players}
+          </span>
         </div>
         <div className="relative mt-4 flex justify-center gap-1.5 sm:gap-3">
           {board.map((c, i) => (
@@ -151,7 +227,8 @@ export default function Calculadora() {
               <CardSlot
                 card={c}
                 size="board"
-                label={`carta ${i + 1} de la mesa`}
+                label={`${t.card} ${i + 1} ${t.ofBoard}`}
+                lang={lang}
                 active={picking?.kind === 'board' && picking.i === i}
                 onClick={() => setPicking({ kind: 'board', i })}
               />
@@ -165,7 +242,7 @@ export default function Calculadora() {
           {busy ? (
             <>
               <span className="h-2 w-2 animate-ping rounded-full bg-neon-cyan" />
-              Calculando…
+              {t.calculating}
             </>
           ) : error ? (
             <span className="text-rose-300">{error}</span>
@@ -173,15 +250,15 @@ export default function Calculadora() {
             <>
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)]" />
               {shown.method === 'exacto'
-                ? `Exacto · ${shown.samples.toLocaleString('es-ES')} combinaciones`
-                : `Monte Carlo · ${shown.samples.toLocaleString('es-ES')} simulaciones`}
+                ? `${t.exact} · ${shown.samples.toLocaleString(t.locale)} ${t.combos}`
+                : `Monte Carlo · ${shown.samples.toLocaleString(t.locale)} ${t.sims}`}
             </>
           ) : null}
         </div>
       </section>
 
       {/* Jugadores */}
-      <section aria-label="Jugadores" className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
+      <section aria-label={t.playersSection} className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
         {players.map((hole, p) => {
           const res = shown?.players[p];
           const leader = !!res && res.equity === best && best > 0;
@@ -201,19 +278,19 @@ export default function Calculadora() {
               <div className="flex items-center justify-between gap-2">
                 <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-white">
                   <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--pc)] shadow-[0_0_8px_var(--pc)]" />
-                  <span className="truncate">{p === 0 ? 'Tú' : `Jugador ${p + 1}`}</span>
+                  <span className="truncate">{playerName(p)}</span>
                 </span>
                 {players.length > 2 ? (
                   <button
                     onClick={() => removePlayer(p)}
-                    aria-label={`Quitar jugador ${p + 1}`}
+                    aria-label={`${t.remove} ${p + 1}`}
                     className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-500 transition hover:bg-rose-500/15 hover:text-rose-300"
                   >
                     ×
                   </button>
                 ) : (
                   leader && (
-                    <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--pc)]">Favorito</span>
+                    <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--pc)]">{t.favorite}</span>
                   )
                 )}
               </div>
@@ -224,7 +301,8 @@ export default function Calculadora() {
                     key={i}
                     card={c}
                     size="sm"
-                    label={`carta ${i + 1} de ${p === 0 ? 'tu mano' : `jugador ${p + 1}`}`}
+                    label={`${t.card} ${i + 1} · ${p === 0 ? t.yourHand : playerName(p)}`}
+                    lang={lang}
                     active={picking?.kind === 'player' && picking.p === p && picking.i === i}
                     onClick={() => setPicking({ kind: 'player', p, i })}
                   />
@@ -246,21 +324,21 @@ export default function Calculadora() {
                 </div>
                 <div className="mt-2 flex justify-between font-mono text-[10px] text-slate-400 sm:text-[11px]">
                   <span>
-                    Gana <span className="text-emerald-300">{res ? pct(res.win) : '—'}</span>
+                    {t.win} <span className="text-emerald-300">{res ? pct(res.win) : '—'}</span>
                   </span>
                   <span>
-                    Empata <span className="text-amber-200">{res ? pct(res.tie) : '—'}</span>
+                    {t.tie} <span className="text-amber-200">{res ? pct(res.tie) : '—'}</span>
                   </span>
                 </div>
                 <p className="mt-1.5 truncate text-xs text-slate-500">
                   {hand ? (
                     <>
-                      Ahora: <span className="text-slate-200">{hand}</span>
+                      {t.now}: <span className="text-slate-200">{HAND_LABELS[lang][hand]}</span>
                     </>
                   ) : known === 0 ? (
-                    'Mano aleatoria'
+                    t.randomHand
                   ) : known === 1 ? (
-                    'Una carta aleatoria'
+                    t.oneRandom
                   ) : (
                     ' '
                   )}
@@ -276,7 +354,7 @@ export default function Calculadora() {
             className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] text-slate-400 transition hover:border-neon-violet/60 hover:bg-neon-violet/[0.06] hover:text-white hover:shadow-[0_0_30px_-12px_var(--color-neon-violet)]"
           >
             <span className="grid h-10 w-10 place-items-center rounded-full border border-current text-xl">+</span>
-            <span className="text-sm font-medium">Añadir jugador</span>
+            <span className="text-sm font-medium">{t.add}</span>
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-600">
               {players.length}/{MAX_PLAYERS}
             </span>
@@ -288,8 +366,8 @@ export default function Calculadora() {
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur sm:p-6">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-neon-cyan/80">Al river</p>
-            <h2 className="text-lg font-bold text-white">Probabilidad de cada jugada</h2>
+            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-neon-cyan/80">{t.atRiver}</p>
+            <h2 className="text-lg font-bold text-white">{t.handOdds}</h2>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {players.map((_, p) => (
@@ -303,7 +381,7 @@ export default function Calculadora() {
                     : 'border-white/10 text-slate-400 hover:text-white'
                 }`}
               >
-                {p === 0 ? 'Tú' : `J${p + 1}`}
+                {p === 0 ? t.you : `${t.p}${p + 1}`}
               </button>
             ))}
           </div>
@@ -314,7 +392,7 @@ export default function Calculadora() {
             const v = focusData?.categories[idx] ?? 0;
             return (
               <div key={name} className="flex items-center gap-3">
-                <span className="w-32 shrink-0 text-sm text-slate-300">{name}</span>
+                <span className="w-32 shrink-0 text-sm text-slate-300">{HAND_LABELS[lang][name]}</span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-neon-cyan to-neon-violet transition-[width] duration-500"
@@ -331,7 +409,7 @@ export default function Calculadora() {
       </section>
 
       <p className="pb-2 text-center font-mono text-[11px] text-slate-600">
-        Toca una casilla para elegir carta · las cartas sin elegir se reparten al azar
+        {t.hint}
       </p>
 
       {picking && (

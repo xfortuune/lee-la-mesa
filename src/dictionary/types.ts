@@ -1,4 +1,5 @@
 // Tipos del diccionario de póker.
+import type { Lang } from '../i18n/lang';
 
 export type Category =
   | 'jugadas'
@@ -11,16 +12,29 @@ export type Category =
   | 'stats'
   | 'jerga';
 
-export const CATEGORY_LABELS: Record<Category, string> = {
-  jugadas: 'Manos y jugadas',
-  acciones: 'Acciones',
-  mesa: 'Mesa y posiciones',
-  estrategia: 'Estrategia',
-  jugadores: 'Tipos de jugador',
-  torneos: 'Torneos',
-  sala: 'Sala, dinero y variantes',
-  stats: 'Estadísticas y software',
-  jerga: 'Jerga',
+export const CATEGORY_LABELS: Record<Lang, Record<Category, string>> = {
+  es: {
+    jugadas: 'Manos y jugadas',
+    acciones: 'Acciones',
+    mesa: 'Mesa y posiciones',
+    estrategia: 'Estrategia',
+    jugadores: 'Tipos de jugador',
+    torneos: 'Torneos',
+    sala: 'Sala, dinero y variantes',
+    stats: 'Estadísticas y software',
+    jerga: 'Jerga',
+  },
+  en: {
+    jugadas: 'Hands',
+    acciones: 'Actions',
+    mesa: 'Table and positions',
+    estrategia: 'Strategy',
+    jugadores: 'Player types',
+    torneos: 'Tournaments',
+    sala: 'Rooms, money and variants',
+    stats: 'Stats and software',
+    jerga: 'Slang',
+  },
 };
 
 export const CATEGORY_COLORS: Record<Category, string> = {

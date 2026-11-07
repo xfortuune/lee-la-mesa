@@ -24,11 +24,44 @@ import {
   ShortcutHint,
 } from '../../components/Trainer';
 import { EMPTY_SCORE, type Score, loadScore, recordResults, saveScore } from '../../lib/score';
-import { SCORE_KEYS } from '../registry';
+import { useLang } from '../../i18n/lang';
+import { SCORE_KEYS, TOOLS } from '../registry';
 
 const SCORE_KEY = SCORE_KEYS.leeLaMesa;
+const TOOL = TOOLS.find((t) => t.id === 'lee-la-mesa')!;
+
+const T = {
+  en: {
+    rules: 'Rules',
+    hand: 'Hand',
+    balancedTag: 'Balanced',
+    randomTag: 'Random',
+    table: 'Table',
+    yourHand: 'Your hand',
+    q1: 'Board texture',
+    q2: 'Your hand strength',
+    coord: 'Texture',
+    strength: 'Strength',
+    balanced: 'Balanced mode',
+  },
+  es: {
+    rules: 'Reglas',
+    hand: 'Mano',
+    balancedTag: 'Equilibrado',
+    randomTag: 'Aleatorio',
+    table: 'Mesa',
+    yourHand: 'Tu mano',
+    q1: 'Coordinación de la mesa',
+    q2: 'Fuerza de tu mano',
+    coord: 'Coordinación',
+    strength: 'Fuerza',
+    balanced: 'Modo equilibrado',
+  },
+};
 
 export default function LeeLaMesa() {
+  const { lang } = useLang();
+  const t = T[lang];
   const [balanced, setBalanced] = useState<boolean>(loadBalanced);
   const [deal, setDeal] = useState<Deal>(() => (loadBalanced() ? dealBalanced() : dealRandom()));
   const [handNo, setHandNo] = useState(1);
@@ -38,7 +71,7 @@ export default function LeeLaMesa() {
   const [score, setScore] = useState<Score>(() => loadScore(SCORE_KEY));
   const [showRules, setShowRules] = useState(false);
 
-  const result = useMemo(() => evaluateHand(deal.hole, deal.flop), [deal]);
+  const result = useMemo(() => evaluateHand(deal.hole, deal.flop, lang), [deal, lang]);
   const correctCoord = result.board.coordination;
   const correctStrength = result.strength;
   const canCheck = coordAnswer !== null && strengthAnswer !== null && !checked;
@@ -82,11 +115,11 @@ export default function LeeLaMesa() {
   return (
     <div className="relative mx-auto flex min-h-dvh max-w-2xl flex-col gap-5 px-4 py-5 sm:py-8">
       <ToolHeader
-        title="Lee la mesa"
+        title={TOOL.text[lang].name}
         index="01"
         actions={
           <button onClick={() => setShowRules(true)} className={headerButtonClass}>
-            Reglas
+            {t.rules}
           </button>
         }
       />
@@ -94,7 +127,7 @@ export default function LeeLaMesa() {
       <Scoreboard score={score} />
 
       <section
-        aria-label="Mesa"
+        aria-label={t.table}
         className="neon-border relative overflow-hidden rounded-[2.25rem] bg-[radial-gradient(ellipse_at_center,_#0f2a3a_0%,_#0b1530_45%,_#070918_100%)] px-3 py-6 shadow-[0_0_60px_-20px_var(--color-neon-cyan),inset_0_0_60px_rgba(0,0,0,0.6)] sm:py-9"
       >
         {/* anillo holográfico */}
@@ -102,8 +135,10 @@ export default function LeeLaMesa() {
         <div className="pointer-events-none absolute inset-x-10 top-1/2 h-px bg-gradient-to-r from-transparent via-neon-violet/30 to-transparent" />
 
         <div className="relative flex items-center justify-between px-2 font-mono text-[10px] uppercase tracking-[0.25em] text-slate-500">
-          <span>Mano #{String(handNo).padStart(3, '0')}</span>
-          <span className={balanced ? 'text-neon-violet' : ''}>{balanced ? 'Equilibrado' : 'Aleatorio'}</span>
+          <span>
+            {t.hand} #{String(handNo).padStart(3, '0')}
+          </span>
+          <span className={balanced ? 'text-neon-violet' : ''}>{balanced ? t.balancedTag : t.randomTag}</span>
         </div>
 
         <div className="relative mt-3 flex flex-col items-center gap-6 sm:gap-8">
@@ -121,7 +156,7 @@ export default function LeeLaMesa() {
                 <PlayingCard key={`${handNo}-${c.rank}${c.suit}`} card={c} delay={320 + i * 90} />
               ))}
             </div>
-            <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-neon-violet/80">Tu mano</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-neon-violet/80">{t.yourHand}</span>
           </div>
         </div>
       </section>
@@ -129,9 +164,9 @@ export default function LeeLaMesa() {
       <section className="flex flex-col gap-5">
         <OptionGroup
           index="01"
-          title="Coordinación de la mesa"
+          title={t.q1}
           options={FLOP_COORDINATIONS}
-          labels={COORDINATION_LABELS}
+          labels={COORDINATION_LABELS[lang]}
           value={coordAnswer}
           correct={checked ? correctCoord : null}
           onChange={setCoordAnswer}
@@ -139,9 +174,9 @@ export default function LeeLaMesa() {
         />
         <OptionGroup
           index="02"
-          title="Fuerza de tu mano"
+          title={t.q2}
           options={STRENGTHS}
-          labels={STRENGTH_LABELS}
+          labels={STRENGTH_LABELS[lang]}
           value={strengthAnswer}
           correct={checked ? correctStrength : null}
           onChange={setStrengthAnswer}
@@ -154,14 +189,14 @@ export default function LeeLaMesa() {
         <section aria-live="polite" className="flex flex-col gap-2.5">
           <Feedback
             ok={coordAnswer === correctCoord}
-            title={`Coordinación: ${COORDINATION_LABELS[correctCoord]}`}
+            title={`${t.coord}: ${COORDINATION_LABELS[lang][correctCoord]}`}
             delay={0}
           >
             {result.board.reason}
           </Feedback>
           <Feedback
             ok={strengthAnswer === correctStrength}
-            title={`Fuerza: ${STRENGTH_LABELS[correctStrength]}`}
+            title={`${t.strength}: ${STRENGTH_LABELS[lang][correctStrength]}`}
             delay={90}
           >
             {result.reason}
@@ -184,7 +219,7 @@ export default function LeeLaMesa() {
               <span className="absolute inset-0 rounded-full border border-white/15 bg-white/[0.06] transition peer-checked:border-neon-violet peer-checked:bg-neon-violet/30 peer-checked:shadow-[0_0_14px_-2px_var(--color-neon-violet)] peer-focus-visible:ring-2 peer-focus-visible:ring-neon-cyan" />
               <span className="absolute left-1 h-4 w-4 rounded-full bg-slate-400 transition peer-checked:translate-x-5 peer-checked:bg-white" />
             </span>
-            Modo equilibrado
+            {t.balanced}
           </label>
           <ResetScoreButton onReset={() => setScore(EMPTY_SCORE)} />
         </div>
