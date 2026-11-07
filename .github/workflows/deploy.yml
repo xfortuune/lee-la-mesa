@@ -26,6 +26,9 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+        env:
+          # URL of the AI review API (Cloudflare Worker). Empty = copy-and-paste fallback.
+          VITE_REVIEW_API_URL: ${{ vars.REVIEW_API_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

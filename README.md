@@ -10,7 +10,7 @@ switch at the top right changes the whole site and the choice is remembered.
 | 01 | Read the Board | `#/read-the-board` | Available |
 | 02 | Calculator | `#/calculator` | Available |
 | 03 | Outs | `#/outs` | Available |
-| 04 | Hand Review | `#/hand-review` | Available (AI review via copy & paste) |
+| 04 | Hand Review | `#/hand-review` | Available, with automatic AI review |
 | 05 | — | — | Coming soon |
 | 06 | Glossary | `#/glossary` | Available |
 
@@ -54,9 +54,31 @@ the cards shown at showdown). For now: Winamax No-Limit Hold'em cash games only.
 
 - **Replayer links**: the hand is downloaded from Winamax's public JSON
   (`poker-assets.winamax.es/replayer/hand/…`), which allows cross-origin requests.
-- **AI review**: for now the tool builds a ready-to-paste prompt for Claude or ChatGPT, with
-  opponents' names replaced by their positions. Automatic analysis (a small server holding an
-  API key) is planned.
+- **AI review**: as soon as the hand loads, the review API (below) asks Claude for a coach-style
+  review and streams it into the page. Reviews are cached in the browser and on the server. If the
+  API is not configured, fails or hits its daily limit, the tool falls back to a ready-to-paste
+  prompt for Claude or ChatGPT. Opponents' names are always replaced by their positions.
+
+### Review API (`worker/`)
+
+A Cloudflare Worker that holds the Anthropic API key and calls Claude (`claude-opus-5-5`).
+
+- `POST /review` with `{ hand, equities, lang }` → the review as streamed plain text.
+- The prompt is built **on the server** from a validated hand (`worker/src/review.ts`), so the
+  endpoint cannot be used as a general-purpose AI proxy.
+- Only the origins in `ALLOWED_ORIGINS` may call it; daily limits per IP and in total
+  (`DAILY_LIMIT_PER_IP`, `DAILY_LIMIT_TOTAL`); answers cached for 30 days in KV.
+- Config in `worker/wrangler.toml`; the API key is a secret (`npx wrangler secret put ANTHROPIC_API_KEY`).
+- The site reads the Worker URL from the `REVIEW_API_URL` GitHub Actions variable at build time
+  (`VITE_REVIEW_API_URL` locally, e.g. in `.env.local`).
+
+```bash
+cd worker
+npm install
+npx wrangler kv namespace create RATE   # paste the id into wrangler.toml
+npx wrangler secret put ANTHROPIC_API_KEY
+npm run deploy
+```
 
 ## 06 · Glossary
 
@@ -100,4 +122,4 @@ Every push to `main` runs the tests and deploys to GitHub Pages (`.github/workfl
 - `src/lib/` — shared score storage and the migration of old localStorage keys.
 - `NOTES.md` — cases the rules do not cover clearly and the provisional decisions taken.
 
-Stack: Vite + React + TypeScript + Tailwind CSS. No backend.
+Stack: Vite + React + TypeScript + Tailwind CSS, plus a Cloudflare Worker for the AI review.

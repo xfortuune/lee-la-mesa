@@ -48,6 +48,12 @@ export const T = {
     showPrompt: 'Show text',
     hidePrompt: 'Hide text',
     newHand: 'Analyse another hand',
+    reviewTitle: 'Coach review',
+    reviewing: 'The AI coach is reviewing your hand…',
+    reviewBy: 'Reviewed by Claude (AI). It can make mistakes: use it as a second opinion.',
+    rateLimited: "You have reached today's limit of AI reviews. Come back tomorrow, or copy the text below into Claude or ChatGPT.",
+    reviewError: 'The AI review is not available right now. You can copy the text below into Claude or ChatGPT.',
+    refused: 'The AI could not review this hand. You can copy the text below into Claude or ChatGPT.',
   },
   es: {
     linkTab: 'Enlace de Winamax',
@@ -94,6 +100,12 @@ export const T = {
     showPrompt: 'Ver texto',
     hidePrompt: 'Ocultar texto',
     newHand: 'Analizar otra mano',
+    reviewTitle: 'Opinión del entrenador',
+    reviewing: 'El entrenador de IA está revisando tu mano…',
+    reviewBy: 'Revisado por Claude (IA). Puede equivocarse: úsalo como una segunda opinión.',
+    rateLimited: 'Has llegado al límite de revisiones con IA de hoy. Vuelve mañana, o copia el texto de abajo en Claude o ChatGPT.',
+    reviewError: 'La revisión con IA no está disponible ahora mismo. Puedes copiar el texto de abajo en Claude o ChatGPT.',
+    refused: 'La IA no ha podido revisar esta mano. Puedes copiar el texto de abajo en Claude o ChatGPT.',
   },
 } satisfies Record<Lang, unknown>;
 

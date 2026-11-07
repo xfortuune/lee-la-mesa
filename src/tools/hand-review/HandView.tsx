@@ -4,6 +4,7 @@ import { PlayingCard } from '../../components/PlayingCard';
 import { useLang } from '../../i18n/lang';
 import {
   type Decision,
+  type HandAnalysis,
   type HandHistory,
   STREET_LABELS,
   analyzeHand,
@@ -13,7 +14,9 @@ import {
   inBB,
   pct,
 } from '../../logic';
+import { Markdown } from './Markdown';
 import { T } from './texts';
+import { useReview } from './useReview';
 
 function Stat({ label, value, hint, tone = 'text-white' }: { label: string; value: ReactNode; hint?: string; tone?: string }) {
   return (
@@ -44,6 +47,51 @@ function DecisionStats({ d, bb }: { d: Decision; bb: number }) {
       )}
       {d.spr !== null && <Stat label={t.spr} value={d.spr.toFixed(1)} />}
     </div>
+  );
+}
+
+function ReviewPanel({ hand, analysis, prompt }: { hand: HandHistory; analysis: HandAnalysis; prompt: string }) {
+  const { lang } = useLang();
+  const t = T[lang];
+  const review = useReview(hand, analysis, lang);
+
+  // Without the API (or when it fails), fall back to the copy-and-paste prompt.
+  if (review.status === 'unconfigured') return <PromptPanel prompt={prompt} />;
+  const problem =
+    review.status === 'rate_limited'
+      ? t.rateLimited
+      : review.status === 'refused'
+        ? t.refused
+        : review.status === 'error'
+          ? t.reviewError
+          : null;
+  const busy = review.status === 'loading' || review.status === 'streaming';
+
+  return (
+    <>
+      <section className="neon-border relative animate-rise overflow-hidden rounded-3xl bg-white/[0.03] p-4 shadow-[0_0_60px_-28px_var(--color-neon-violet)] backdrop-blur sm:p-6">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-neon-violet opacity-10 blur-3xl" />
+        <p className="relative font-mono text-[11px] uppercase tracking-[0.3em] text-neon-violet/80">// AI</p>
+        <h2 className="relative mt-1 text-xl font-bold text-white">{t.reviewTitle}</h2>
+        <div className="relative mt-4" aria-live="polite" aria-busy={busy}>
+          {review.status === 'loading' && (
+            <div className="flex items-center gap-3 text-sm text-slate-400">
+              <span className="h-2.5 w-2.5 animate-ping rounded-full bg-neon-violet" />
+              {t.reviewing}
+            </div>
+          )}
+          {review.text && <Markdown text={review.text} />}
+          {review.status === 'streaming' && (
+            <span className="ml-0.5 inline-block h-4 w-2 animate-pulse bg-neon-violet align-middle" />
+          )}
+          {problem && (
+            <p className="mt-3 rounded-xl border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">{problem}</p>
+          )}
+          {review.status === 'done' && <p className="mt-4 text-xs text-slate-500">{t.reviewBy}</p>}
+        </div>
+      </section>
+      {problem && <PromptPanel prompt={prompt} />}
+    </>
   );
 }
 
@@ -150,6 +198,8 @@ export function HandView({ hand }: { hand: HandHistory }) {
         </div>
       </section>
 
+      <ReviewPanel hand={hand} analysis={analysis} prompt={prompt} />
+
       {/* Seats */}
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur sm:p-5">
         <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.25em] text-slate-400">{t.table}</h2>
@@ -250,7 +300,6 @@ export function HandView({ hand }: { hand: HandHistory }) {
         </section>
       )}
 
-      <PromptPanel prompt={prompt} />
     </div>
   );
 }

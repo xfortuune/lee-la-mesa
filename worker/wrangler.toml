@@ -1,0 +1,18 @@
+# PokerToolBox review API. Deploy with `npm run deploy` from this folder.
+name = "pokertoolbox-api"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://xfortuune.github.io,http://localhost:5173"
+MODEL = "claude-opus-5-5"
+DAILY_LIMIT_PER_IP = "15"
+DAILY_LIMIT_TOTAL = "300"
+
+# Rate limits and cached reviews. Create with `npx wrangler kv namespace create RATE`
+# and paste the id here.
+[[kv_namespaces]]
+binding = "RATE"
+id = "REPLACE_WITH_KV_ID"
+
+# The Anthropic API key is a secret: `npx wrangler secret put ANTHROPIC_API_KEY`
