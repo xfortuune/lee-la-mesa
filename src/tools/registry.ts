@@ -58,6 +58,36 @@ export const TOOLS: Tool[] = [
     ready: true,
     scoreKey: SCORE_KEYS.outs,
   },
+  {
+    id: 'herramienta-4',
+    index: '04',
+    name: 'Herramienta 4',
+    tagline: 'En construcción',
+    description: 'Una nueva herramienta de entrenamiento llegará pronto.',
+    glyph: '♥',
+    accent: 'var(--color-neon-lime)',
+    ready: false,
+  },
+  {
+    id: 'herramienta-5',
+    index: '05',
+    name: 'Herramienta 5',
+    tagline: 'En construcción',
+    description: 'Una nueva herramienta de entrenamiento llegará pronto.',
+    glyph: '✦',
+    accent: '#fbbf24',
+    ready: false,
+  },
+  {
+    id: 'diccionario',
+    index: '06',
+    name: 'Diccionario',
+    tagline: 'Jerga del póker',
+    description: 'Más de 350 términos, del 3-bet al WSOP, explicados en pocas palabras y con buscador.',
+    glyph: 'Aa',
+    accent: '#38bdf8',
+    ready: true,
+  },
 ];
 
 export function toolHref(tool: Tool): string {

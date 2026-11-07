@@ -12,14 +12,8 @@ export default function App() {
   const tool = TOOLS.find((t) => t.id === route && t.ready);
 
   useEffect(() => {
-    document.title = tool
-      ? `${tool.name} · ${APP_NAME}`
-      : route === 'diccionario'
-        ? `Diccionario · ${APP_NAME}`
-        : APP_NAME;
-  }, [tool, route]);
-
-  if (route === 'diccionario') return <Dictionary />;
+    document.title = tool ? `${tool.name} · ${APP_NAME}` : APP_NAME;
+  }, [tool]);
 
   switch (tool?.id) {
     case 'lee-la-mesa':
@@ -28,6 +22,8 @@ export default function App() {
       return <Calculadora />;
     case 'outs':
       return <OutsTrainer />;
+    case 'diccionario':
+      return <Dictionary />;
     default:
       return <Home />;
   }

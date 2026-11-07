@@ -1,10 +1,17 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { hitRate, loadScore } from '../lib/score';
-import { DictionaryCorner } from './DictionaryCorner';
+import { termOfTheDay } from '../dictionary';
 import { APP_NAME, TOOLS, type Tool, toolHref } from '../tools/registry';
 
 /** Resumen corto del progreso de cada herramienta, si tiene. */
 function toolStats(tool: Tool): ReactNode {
+  if (tool.id === 'diccionario') {
+    return (
+      <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-slate-500">
+        Término del día: <span className="normal-case tracking-normal text-white">{termOfTheDay().term}</span>
+      </p>
+    );
+  }
   if (!tool.scoreKey) return null;
   const s = loadScore(tool.scoreKey);
   if (s.hits + s.misses === 0) return null;
@@ -45,6 +52,8 @@ function ToolCard({ tool, delay }: { tool: Tool; delay: number }) {
       </div>
 
       <div
+        // Los símbolos de varias letras ("Aa") van más pequeños para caber en la caja.
+        style={tool.glyph.length > 1 ? { fontSize: '1.6rem', fontWeight: 700 } : undefined}
         className={`relative my-5 grid h-16 w-16 place-items-center rounded-2xl border text-4xl md:my-6 md:h-20 md:w-20 md:text-5xl transition duration-500 ${
           tool.ready
             ? 'border-[var(--accent)]/40 bg-[var(--accent)]/10 text-[var(--accent)] shadow-[0_0_40px_-10px_var(--accent)] group-hover:scale-105 group-hover:shadow-[0_0_50px_-6px_var(--accent)]'
@@ -136,8 +145,6 @@ export function Home() {
           <ToolCard key={tool.id} tool={tool} delay={120 + i * 90} />
         ))}
       </section>
-
-      <DictionaryCorner />
 
       <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-14 font-mono text-[11px] uppercase tracking-[0.2em] text-slate-600">
         <span>{APP_NAME} · v1</span>

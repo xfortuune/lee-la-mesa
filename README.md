@@ -1,7 +1,7 @@
 # Hold'em Lab ♠
 
 Hub de herramientas de práctica para Texas Hold'em. La página de inicio da acceso a
-tres herramientas (las rutas usan hash: `#/lee-la-mesa`…). Se añaden en
+seis herramientas (las rutas usan hash: `#/lee-la-mesa`…). Se añaden en
 `src/tools/registry.ts`.
 
 | # | Herramienta | Estado |
@@ -9,9 +9,11 @@ tres herramientas (las rutas usan hash: `#/lee-la-mesa`…). Se añaden en
 | 01 | Lee la mesa | Disponible |
 | 02 | Calculadora | Disponible |
 | 03 | Outs | Disponible |
+| 04 | — | Próximamente |
+| 05 | — | Próximamente |
+| 06 | Diccionario | Disponible |
 
-Además, el hub tiene un **rincón del diccionario** (buscador, índice A–Z y término del día)
-que lleva a `#/diccionario`: 380 términos de póker recopilados de los glosarios de
+El **diccionario** (`#/diccionario`) reúne 380 términos de póker recopilados de los glosarios de
 [Poker Red](https://www.poker-red.com/aprender-poker/diccionario-de-poker) y
 [ZerosPoker](https://zerospoker.com/glosario/), sin duplicados y con definiciones propias.
 
@@ -70,8 +72,8 @@ npm run build    # build de producción en dist/
   - `equity.ts` — evaluador de manos y cálculo de equity.
   - `outs.ts` — conteo de outs, regla del 2 y del 4 y reparto de situaciones.
   - `*.test.ts` — tests.
-- `src/pages/Home.tsx` — página de inicio (hub) y `DictionaryCorner.tsx`, su rincón del diccionario.
-- `src/pages/Dictionary.tsx` — página del diccionario.
+- `src/pages/Home.tsx` — página de inicio (hub).
+- `src/pages/Dictionary.tsx` — página del diccionario (herramienta 06).
 - `src/dictionary/` — términos del diccionario, búsqueda y término del día (con test de duplicados).
 - `src/router.ts` — enrutado mínimo por hash.
 - `src/tools/registry.ts` — lista de herramientas del hub.

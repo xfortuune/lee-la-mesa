@@ -71,7 +71,7 @@ export function Dictionary() {
 
   return (
     <div className="relative mx-auto flex min-h-dvh max-w-4xl flex-col gap-5 px-4 py-5 sm:px-6 sm:py-8">
-      <ToolHeader title="Diccionario" subtitle={`${APP_NAME} · ${TERMS.length} términos`} />
+      <ToolHeader title="Diccionario" subtitle={`${APP_NAME} · Herramienta 06 · ${TERMS.length} términos`} />
 
       <div className="sticky top-0 z-20 -mx-4 flex flex-col gap-3 bg-void/80 px-4 pb-3 pt-2 backdrop-blur-xl sm:-mx-6 sm:px-6">
         <label className="neon-border relative flex items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3 shadow-[0_0_30px_-12px_var(--color-neon-cyan)]">
