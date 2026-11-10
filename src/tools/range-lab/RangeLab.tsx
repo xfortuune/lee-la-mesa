@@ -2,7 +2,7 @@ import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react
 import { CardPicker } from '../../components/CardPicker';
 import { CardSlot } from '../../components/CardSlot';
 import { cardKey } from '../../components/cardStyles';
-import { ToolHeader, headerButtonClass } from '../../components/ToolHeader';
+import { ToolHeader } from '../../components/ToolHeader';
 import { useLang } from '../../i18n/lang';
 import {
   ALL_HANDS,
@@ -45,6 +45,7 @@ const BOARD_LABELS = ['Flop', 'Flop', 'Flop', 'Turn', 'River'];
 const MAX_HISTORY = 50;
 
 type Tab = 'range' | 'board' | 'stats' | 'streets';
+type ToolsTab = 'shortcuts' | 'text' | 'saved';
 type Slot = { kind: 'board' | 'hero'; i: number };
 interface Saved {
   name: string;
@@ -72,9 +73,22 @@ function storeSaved(list: Saved[]) {
   }
 }
 
+/** True from the lg breakpoint, where the page fits the screen and cards get smaller. */
+function useWide() {
+  const query = '(min-width: 1024px)';
+  const [wide, setWide] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const m = window.matchMedia(query);
+    const on = () => setWide(m.matches);
+    m.addEventListener('change', on);
+    return () => m.removeEventListener('change', on);
+  }, []);
+  return wide;
+}
+
 function Panel({ title, eyebrow, children, className = '' }: { title?: string; eyebrow?: string; children: ReactNode; className?: string }) {
   return (
-    <section className={`rounded-3xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur sm:p-5 ${className}`}>
+    <section className={`rounded-3xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur sm:p-4 ${className}`}>
       {(title || eyebrow) && (
         <div className="mb-3">
           {eyebrow && <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-amber-300/80">{eyebrow}</p>}
@@ -110,6 +124,9 @@ export default function RangeLab() {
   const [saved, setSaved] = useState<Saved[]>(loadSaved);
   const [saveName, setSaveName] = useState('');
   const [tab, setTab] = useState<Tab>('range');
+  const [side, setSide] = useState<'stats' | 'streets'>('stats');
+  const [toolsTab, setToolsTab] = useState<ToolsTab>('shortcuts');
+  const wide = useWide();
 
   // --- Range edits -------------------------------------------------------------------------
   const snapshot = useCallback(() => setHistory((h) => [...h.slice(-MAX_HISTORY + 1), range]), [range]);
@@ -280,13 +297,17 @@ export default function RangeLab() {
   }, [picking, editHand, randomFlop, commit, undo]);
 
   // --- Layout ------------------------------------------------------------------------------
+  // Phones: one tab at a time. From lg the page fits the screen: grid on the left, board and
+  // stats on the right (stats and turn/river share a column on lg, three columns from xl).
   const tabs: [Tab, string][] = [
     ['range', t.range],
     ['board', t.board],
     ['stats', t.stats],
     ['streets', t.streets],
   ];
-  const show = (x: Tab) => (tab === x ? '' : 'hidden lg:block');
+  const onTab = (x: Tab) => (tab === x ? 'flex' : 'hidden');
+  const onSide = (x: 'stats' | 'streets') => `${onTab(x)} ${side === x ? 'lg:flex' : 'lg:hidden'} xl:flex`;
+  const cardSize = wide ? 'xs' : 'sm';
 
   const counter = (
     <div className="flex items-baseline gap-2 font-mono tabular-nums">
@@ -296,38 +317,58 @@ export default function RangeLab() {
     </div>
   );
 
-  const rangePanel = (
-    <div className={`flex flex-col gap-4 ${show('range')}`}>
-      <Panel>
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <div role="radiogroup" aria-label={t.paint} className="flex rounded-xl border border-white/10 p-0.5">
-            {(['paint', 'edit'] as const).map((m) => (
-              <button
-                key={m}
-                role="radio"
-                aria-checked={mode === m}
-                onClick={() => setMode(m)}
-                className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${mode === m ? 'bg-amber-300/20 text-amber-100' : 'text-slate-400 hover:text-white'}`}
-              >
-                {m === 'paint' ? t.paint : t.edit}
-              </button>
-            ))}
-          </div>
-          <label className="flex min-w-40 flex-1 items-center gap-2 text-xs text-slate-400">
-            {t.weight}
-            <input
-              type="range"
-              min={5}
-              max={100}
-              step={5}
-              value={Math.round(paintWeight * 100)}
-              onChange={(e) => setPaintWeight(Number(e.target.value) / 100)}
-              className="flex-1 accent-amber-400"
-            />
-            <span className="w-10 text-right font-mono text-amber-200">{Math.round(paintWeight * 100)}%</span>
-          </label>
-        </div>
+  const toolsTabs: [ToolsTab, string][] = [
+    ['shortcuts', t.shortcutsTab],
+    ['text', t.text],
+    ['saved', t.saved],
+  ];
 
+  const rangePanel = (
+    <Panel
+      className={`${onTab('range')} flex-col gap-3 lg:flex lg:min-h-0 lg:w-[calc(min(46vw,100dvh_-_330px)_+_34px)] xl:w-[calc(min(36vw,100dvh_-_330px)_+_34px)]`}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <div role="radiogroup" aria-label={t.paint} className="flex rounded-xl border border-white/10 p-0.5">
+          {(['paint', 'edit'] as const).map((m) => (
+            <button
+              key={m}
+              role="radio"
+              aria-checked={mode === m}
+              onClick={() => setMode(m)}
+              className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${mode === m ? 'bg-amber-300/20 text-amber-100' : 'text-slate-400 hover:text-white'}`}
+            >
+              {m === 'paint' ? t.paint : t.edit}
+            </button>
+          ))}
+        </div>
+        <label className="flex min-w-32 flex-1 items-center gap-2 text-xs text-slate-400">
+          {t.weight}
+          <input
+            type="range"
+            min={5}
+            max={100}
+            step={5}
+            value={Math.round(paintWeight * 100)}
+            onChange={(e) => setPaintWeight(Number(e.target.value) / 100)}
+            className="min-w-0 flex-1 accent-amber-400"
+          />
+          <span className="w-9 text-right font-mono text-amber-200">{Math.round(paintWeight * 100)}%</span>
+        </label>
+        <div className="flex gap-1.5">
+          <button onClick={() => commit({})} className={chip}>
+            {t.clear}
+          </button>
+          <button onClick={() => commit(invertRange(range))} className={chip}>
+            {t.invert}
+          </button>
+          <button onClick={undo} disabled={!history.length} aria-label={t.undo} title={t.undo} className={`${chip} disabled:opacity-40`}>
+            ↶
+          </button>
+        </div>
+      </div>
+
+      {/* The grid is as big as the screen height allows */}
+      <div className="w-full">
         <RangeGrid
           cells={cells}
           mode={mode}
@@ -341,235 +382,243 @@ export default function RangeLab() {
           onPaint={(hand, add) => setRange((r) => setHand(r, hand, add ? paintWeight : 0))}
           onEdit={setEditHand}
         />
-        <p className="mt-2 text-[11px] text-slate-500">{t.paintHint}</p>
+      </div>
+      <p className="-mt-1 text-[11px] text-slate-500 lg:hidden">{t.paintHint}</p>
 
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button onClick={() => commit({})} className={chip}>
-            {t.clear}
-          </button>
-          <button onClick={() => commit(invertRange(range))} className={chip}>
-            {t.invert}
-          </button>
-          <button onClick={undo} disabled={!history.length} className={`${chip} disabled:opacity-40`}>
-            ↶ {t.undo}
-          </button>
-        </div>
-      </Panel>
-
-      <Panel>
-        <label className="flex items-center gap-3 text-sm">
-          <span className="w-10 font-mono text-xs uppercase text-slate-400">{t.top}</span>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={0.5}
-            value={topPct}
-            onPointerDown={snapshot}
-            onKeyDown={snapshot}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              setTopPct(v);
-              setRange(topPercent(v));
-              setDraft(null);
-              setSelected(new Set());
-            }}
-            className="flex-1 accent-amber-400"
-          />
-          <span className="w-14 text-right font-mono tabular-nums text-amber-200">{topPct}%</span>
-        </label>
-
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">{t.groups}</span>
-          <button onClick={() => addHands(GROUPS.pairs)} className={chip}>
-            {t.pairs}
-          </button>
-          <button onClick={() => addHands(GROUPS.suited)} className={chip}>
-            {t.suited}
-          </button>
-          <button onClick={() => addHands(GROUPS.broadways)} className={chip}>
-            {t.broadways}
-          </button>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">{t.presets}</span>
-          {(Object.keys(PRESETS) as PresetId[]).map((id) => (
-            <button key={id} onClick={() => commit(presetRange(id))} className={chip}>
-              {PRESET_LABELS[id]}
+      {/* Shortcuts, text and saved ranges share one box */}
+      <div className="flex min-h-0 flex-col rounded-2xl border border-white/[0.07] bg-black/20 lg:h-[150px]">
+        <div role="tablist" className="flex gap-1 border-b border-white/[0.06] px-2 pt-1.5">
+          {toolsTabs.map(([id, label]) => (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={toolsTab === id}
+              onClick={() => setToolsTab(id)}
+              className={`-mb-px border-b-2 px-2.5 pb-1.5 font-mono text-[10px] uppercase tracking-[0.15em] transition ${
+                toolsTab === id ? 'border-amber-300 text-amber-200' : 'border-transparent text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              {label}
             </button>
           ))}
         </div>
-        <p className="mt-1.5 text-[11px] text-slate-500">{t.presetsNote}</p>
-      </Panel>
-
-      <Panel eyebrow={t.text}>
-        <textarea
-          value={text}
-          onChange={(e) => {
-            setDraft(e.target.value);
-            setParseError(null);
-          }}
-          rows={3}
-          spellCheck={false}
-          aria-label={t.text}
-          className="w-full resize-y rounded-xl border border-white/10 bg-black/30 p-3 font-mono text-xs text-slate-200 outline-none focus:border-amber-300/60"
-        />
-        {parseError && (
-          <p role="alert" className="mt-1 text-xs text-rose-300">
-            {t.parseError}: “{parseError}”
-          </p>
-        )}
-        <div className="mt-2 flex gap-2">
-          <button onClick={applyText} disabled={draft === null} className={`${chip} disabled:opacity-40`}>
-            {t.apply}
-          </button>
-          <button onClick={copyText} className={chip}>
-            {copied ? `✓ ${t.copied}` : t.copy}
-          </button>
-        </div>
-
-        <div className="mt-4 border-t border-white/[0.06] pt-3">
-          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-slate-500">{t.saved}</p>
-          <form
-            className="flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              save();
-            }}
-          >
-            <input
-              value={saveName}
-              onChange={(e) => setSaveName(e.target.value)}
-              placeholder={t.name}
-              aria-label={t.name}
-              maxLength={40}
-              className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-sm text-white outline-none focus:border-amber-300/60"
-            />
-            <button type="submit" disabled={!saveName.trim()} className={`${chip} disabled:opacity-40`}>
-              {t.save}
-            </button>
-          </form>
-          {saved.length ? (
-            <ul className="mt-2 flex flex-col gap-1">
-              {saved.map((s) => (
-                <li key={s.name} className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-white/[0.03]">
-                  <span className="min-w-0 flex-1 truncate text-sm text-slate-200" title={s.text}>
-                    {s.name}
-                  </span>
-                  <button
-                    onClick={() => {
-                      try {
-                        commit(parseRange(s.text));
-                      } catch {
-                        // A broken entry is ignored.
-                      }
-                    }}
-                    className="text-xs text-amber-200 hover:underline"
-                  >
-                    {t.load}
+        <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
+          {toolsTab === 'shortcuts' && (
+            <div className="flex flex-col gap-2.5">
+              <label className="flex items-center gap-3 text-sm">
+                <span className="min-w-9 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500">{t.top}</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={0.5}
+                  value={topPct}
+                  onPointerDown={snapshot}
+                  onKeyDown={snapshot}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setTopPct(v);
+                    setRange(topPercent(v));
+                    setDraft(null);
+                    setSelected(new Set());
+                  }}
+                  className="min-w-0 flex-1 accent-amber-400"
+                />
+                <span className="w-12 text-right font-mono tabular-nums text-amber-200">{topPct}%</span>
+              </label>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="min-w-9 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500">{t.groups}</span>
+                <button onClick={() => addHands(GROUPS.pairs)} className={chip}>
+                  {t.pairs}
+                </button>
+                <button onClick={() => addHands(GROUPS.suited)} className={chip}>
+                  {t.suited}
+                </button>
+                <button onClick={() => addHands(GROUPS.broadways)} className={chip}>
+                  {t.broadways}
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5" title={t.presetsNote}>
+                <span className="min-w-9 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500">6-max</span>
+                {(Object.keys(PRESETS) as PresetId[]).map((id) => (
+                  <button key={id} onClick={() => commit(presetRange(id))} className={chip}>
+                    {PRESET_LABELS[id]}
                   </button>
-                  <button onClick={() => removeSaved(s.name)} aria-label={`${t.delete} ${s.name}`} className="text-xs text-slate-500 hover:text-rose-300">
-                    ×
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-xs text-slate-500">{t.noSaved}</p>
+                ))}
+                <span className="text-[10px] text-slate-500">· {t.presetsNote}</span>
+              </div>
+            </div>
+          )}
+
+          {toolsTab === 'text' && (
+            <div className="flex h-full gap-2">
+              <textarea
+                value={text}
+                onChange={(e) => {
+                  setDraft(e.target.value);
+                  setParseError(null);
+                }}
+                rows={4}
+                spellCheck={false}
+                aria-label={t.text}
+                className="min-w-0 flex-1 resize-none rounded-xl border border-white/10 bg-black/30 p-2 font-mono text-xs text-slate-200 outline-none focus:border-amber-300/60"
+              />
+              <div className="flex w-24 shrink-0 flex-col gap-1.5">
+                <button onClick={applyText} disabled={draft === null} className={`${chip} disabled:opacity-40`}>
+                  {t.apply}
+                </button>
+                <button onClick={copyText} className={chip}>
+                  {copied ? `✓ ${t.copied}` : t.copy}
+                </button>
+                {parseError && (
+                  <p role="alert" className="text-[11px] leading-tight text-rose-300">
+                    {t.parseError}: “{parseError}”
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {toolsTab === 'saved' && (
+            <div>
+              <form
+                className="flex gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  save();
+                }}
+              >
+                <input
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  placeholder={t.name}
+                  aria-label={t.name}
+                  maxLength={40}
+                  className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-sm text-white outline-none focus:border-amber-300/60"
+                />
+                <button type="submit" disabled={!saveName.trim()} className={`${chip} disabled:opacity-40`}>
+                  {t.save}
+                </button>
+              </form>
+              {saved.length ? (
+                <ul className="mt-1.5 flex flex-col">
+                  {saved.map((s) => (
+                    <li key={s.name} className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-white/[0.03]">
+                      <span className="min-w-0 flex-1 truncate text-sm text-slate-200" title={s.text}>
+                        {s.name}
+                      </span>
+                      <button
+                        onClick={() => {
+                          try {
+                            commit(parseRange(s.text));
+                          } catch {
+                            // A broken entry is ignored.
+                          }
+                        }}
+                        className="text-xs text-amber-200 hover:underline"
+                      >
+                        {t.load}
+                      </button>
+                      <button
+                        onClick={() => removeSaved(s.name)}
+                        aria-label={`${t.delete} ${s.name}`}
+                        className="text-xs text-slate-500 hover:text-rose-300"
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-xs text-slate-500">{t.noSaved}</p>
+              )}
+            </div>
           )}
         </div>
-      </Panel>
-    </div>
+      </div>
+    </Panel>
   );
 
   const eq = equity.result;
   const boardPanel = (
-    <div className={`flex flex-col gap-4 ${show('board')}`}>
-      <section
-        aria-label={t.table}
-        className="relative overflow-hidden rounded-[2rem] border border-amber-300/20 bg-[radial-gradient(ellipse_at_center,_#2a2210_0%,_#14110a_50%,_#070918_100%)] px-3 py-5 shadow-[0_0_60px_-24px_#fbbf24,inset_0_0_60px_rgba(0,0,0,0.6)]"
-      >
-        <div className="relative flex flex-wrap items-center justify-between gap-2 px-1">
-          <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-slate-500">{t.table}</span>
-          <div className="flex gap-2">
-            <button onClick={randomFlop} className={chip}>
-              ⟳ {t.randomBoard}
-            </button>
-            <button onClick={() => setBoard([null, null, null, null, null])} className={chip}>
-              {t.clearBoard}
-            </button>
-          </div>
-        </div>
-        <div className="relative mt-4 flex justify-center gap-1.5 sm:gap-2">
+    <section
+      aria-label={t.table}
+      className={`${onTab('board')} relative shrink-0 flex-col gap-3 overflow-hidden rounded-3xl border border-amber-300/20 bg-[radial-gradient(ellipse_at_center,_#2a2210_0%,_#14110a_50%,_#070918_100%)] p-3 shadow-[0_0_60px_-24px_#fbbf24,inset_0_0_60px_rgba(0,0,0,0.6)] sm:p-4 lg:flex`}
+    >
+      <div className="flex flex-wrap items-end justify-center gap-x-4 gap-y-3">
+        <div className="flex gap-1.5">
           {board.map((c, i) => (
-            <div key={i} className={`flex flex-col items-center gap-1 ${i >= 3 ? 'ml-1 sm:ml-2' : ''}`}>
+            <div key={i} className={`flex flex-col items-center gap-1 ${i === 3 || i === 4 ? 'ml-0.5' : ''}`}>
               <CardSlot
                 card={c}
-                size="sm"
+                size={cardSize}
                 label={`${t.card} ${i + 1} ${t.ofBoard}`}
                 active={picking?.kind === 'board' && picking.i === i}
                 onClick={() => setPicking({ kind: 'board', i })}
               />
-              <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-slate-500">{BOARD_LABELS[i]}</span>
+              <span className="font-mono text-[8px] uppercase tracking-[0.15em] text-slate-500">{BOARD_LABELS[i]}</span>
             </div>
           ))}
         </div>
-        <div className="relative mt-5 flex items-center justify-center gap-4">
-          <div className="flex gap-1.5">
-            {hero.map((c, i) => (
+        <div className="flex gap-1.5 border-l border-white/10 pl-4">
+          {hero.map((c, i) => (
+            <div key={i} className="flex flex-col items-center gap-1">
               <CardSlot
-                key={i}
                 card={c}
-                size="sm"
+                size={cardSize}
                 label={`${t.heroCard} ${i + 1}`}
                 active={picking?.kind === 'hero' && picking.i === i}
                 onClick={() => setPicking({ kind: 'hero', i })}
               />
-            ))}
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-white">{t.hero}</p>
-            <p className="max-w-40 text-[11px] text-slate-500">{t.heroHint}</p>
-            {heroCards.length > 0 && (
-              <button onClick={() => setHero([null, null])} className="mt-1 text-[11px] text-rose-300 hover:underline">
-                {t.clear}
-              </button>
-            )}
-          </div>
+              <span className="font-mono text-[8px] uppercase tracking-[0.15em] text-amber-300/80">{t.hero}</span>
+            </div>
+          ))}
         </div>
-      </section>
+        <div className="flex gap-1.5 self-center">
+          <button onClick={randomFlop} className={chip} title={t.randomBoard}>
+            ⟳ <span className="lg:hidden 2xl:inline">{t.randomBoard}</span>
+          </button>
+          <button
+            onClick={() => {
+              setBoard([null, null, null, null, null]);
+              setHero([null, null]);
+            }}
+            className={chip}
+            title={t.clearBoard}
+          >
+            ✕ <span className="lg:hidden 2xl:inline">{t.clearBoard}</span>
+          </button>
+        </div>
+      </div>
 
-      <Panel eyebrow={t.equity} title={hasHero ? t.heroVsRange : t.rangeVsRandom}>
-        <div className="flex items-end justify-between gap-3">
-          <span className="font-mono text-4xl font-bold tabular-nums text-white">
-            {live > 0 && eq ? pct(eq.equity) : '—'}
-          </span>
-          <span className="pb-1 text-right font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500">
-            {equity.busy ? (
-              <span className="flex items-center gap-2">
-                <span className="h-2 w-2 animate-ping rounded-full bg-amber-300" />
-                {t.calculating}
-              </span>
-            ) : eq ? (
-              `${eq.method === 'exact' ? t.exact : t.monteCarlo} · ${eq.samples.toLocaleString(t.locale)}`
-            ) : (
-              ''
-            )}
-          </span>
+      {/* Equity, in one line */}
+      <div className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-black/30 px-3 py-2">
+        <div className="min-w-0">
+          <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-amber-300/80">{t.equity}</p>
+          <p className="truncate text-xs text-slate-300">{hasHero ? t.heroVsRange : t.rangeVsRandom}</p>
         </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/[0.06]">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-amber-400 to-neon-cyan transition-[width] duration-500"
-            style={{ width: live > 0 && eq ? `${eq.equity * 100}%` : '0%' }}
-          />
+        <span className="font-mono text-2xl font-bold tabular-nums text-white">{live > 0 && eq ? pct(eq.equity) : '—'}</span>
+        <div className="min-w-0 flex-1">
+          <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-400 to-neon-cyan transition-[width] duration-500"
+              style={{ width: live > 0 && eq ? `${eq.equity * 100}%` : '0%' }}
+            />
+          </div>
+          <p className="mt-1 truncate text-right font-mono text-[9px] uppercase tracking-[0.12em] text-slate-500">
+            {equity.busy
+              ? t.calculating
+              : eq
+                ? `${eq.method === 'exact' ? t.exact : t.monteCarlo} · ${eq.samples.toLocaleString(t.locale)}`
+                : ''}
+          </p>
         </div>
-      </Panel>
-    </div>
+      </div>
+    </section>
   );
 
   const statsPanel = (
-    <Panel className={show('stats')} eyebrow={t.stats}>
+    <Panel className={`${onSide('stats')} min-h-0 flex-1 flex-col lg:overflow-y-auto`}>
       {live === 0 ? (
         <p className="text-sm text-slate-400">{t.emptyRange}</p>
       ) : !analysis ? (
@@ -589,7 +638,7 @@ export default function RangeLab() {
   );
 
   const streetsPanel = (
-    <Panel className={show('streets')}>
+    <Panel className={`${onSide('streets')} min-h-0 flex-1 flex-col`}>
       {tableStreet && live > 0 ? (
         table.result ? (
           <StreetTable
@@ -611,24 +660,17 @@ export default function RangeLab() {
   );
 
   return (
-    <div className="relative mx-auto flex min-h-dvh max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6 sm:py-8">
+    <div className="relative mx-auto flex min-h-dvh max-w-[1700px] flex-col gap-3 px-4 py-4 sm:px-6 lg:h-dvh lg:overflow-hidden lg:py-3">
       <ToolHeader
         title={TOOL.text[lang].name}
         index="05"
-        actions={
-          <button onClick={() => commit({})} className={`${headerButtonClass} hidden sm:block`}>
-            {t.clear}
-          </button>
-        }
+        actions={<div className="hidden lg:block">{counter}</div>}
       />
 
-      {/* Sticky combo counter and, on mobile, the tabs */}
-      <div className="sticky top-0 z-30 -mx-4 flex flex-col gap-2 border-b border-white/[0.06] bg-void/85 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6">
-        <div className="flex items-center justify-between gap-3">
-          {counter}
-          <span className="hidden font-mono text-[10px] uppercase tracking-[0.15em] text-slate-600 md:block">{t.shortcuts}</span>
-        </div>
-        <div role="tablist" className="grid grid-cols-4 gap-1 lg:hidden">
+      {/* Phones and tablets: sticky combo counter and tabs */}
+      <div className="sticky top-0 z-30 -mx-4 flex flex-col gap-2 border-b border-white/[0.06] bg-void/85 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6 lg:hidden">
+        {counter}
+        <div role="tablist" className="grid grid-cols-4 gap-1">
           {tabs.map(([id, label]) => (
             <button
               key={id}
@@ -645,14 +687,33 @@ export default function RangeLab() {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start">
+      <div className="flex flex-col gap-3 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[auto_minmax(0,1fr)] xl:grid-cols-[auto_minmax(0,1fr)_minmax(0,0.85fr)]">
         {rangePanel}
-        <div className="flex flex-col gap-4">
+        <div className="flex min-h-0 flex-col gap-3">
           {boardPanel}
+          {/* lg only: stats and turn/river take turns in this column */}
+          <div role="tablist" className="hidden shrink-0 grid-cols-2 gap-1 rounded-xl border border-white/10 p-0.5 lg:grid xl:hidden">
+            {(['stats', 'streets'] as const).map((id) => (
+              <button
+                key={id}
+                role="tab"
+                aria-selected={side === id}
+                onClick={() => setSide(id)}
+                className={`rounded-lg py-1 text-xs font-semibold transition ${side === id ? 'bg-amber-300/20 text-amber-100' : 'text-slate-400 hover:text-white'}`}
+              >
+                {id === 'stats' ? t.stats : t.streets}
+              </button>
+            ))}
+          </div>
           {statsPanel}
-          {streetsPanel}
+          <div className="contents xl:hidden">{streetsPanel}</div>
         </div>
+        <div className="hidden min-h-0 flex-col xl:flex">{streetsPanel}</div>
       </div>
+
+      <p className="hidden shrink-0 text-center font-mono text-[10px] uppercase tracking-[0.15em] text-slate-600 lg:block">
+        {t.shortcuts} · {t.paintHint}
+      </p>
 
       {picking && (
         <CardPicker

@@ -67,17 +67,17 @@ export function StatsPanel({ analysis, equity, hasHero, selected, onToggle, onHo
           onPointerLeave={() => onHover(null)}
           onFocus={() => onHover(cat)}
           onBlur={() => onHover(null)}
-          className={`group grid cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-x-2.5 rounded-lg px-2 py-1.5 transition hover:bg-neon-cyan/[0.07] ${
+          className={`group grid cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-x-2.5 rounded-lg px-2 py-1 transition hover:bg-neon-cyan/[0.07] ${
             on ? 'bg-amber-300/[0.08]' : ''
           }`}
         >
           <input type="checkbox" checked={on} onChange={() => onToggle(cat)} className="h-3.5 w-3.5 accent-amber-400" />
           <span className="min-w-0">
             <span className="flex items-baseline justify-between gap-2">
-              <span className="text-sm leading-tight text-slate-200 group-hover:text-white">{labels[cat]}</span>
+              <span title={labels[cat]} className="text-sm leading-tight text-slate-200 group-hover:text-white lg:truncate">{labels[cat]}</span>
               <span className="shrink-0 font-mono text-xs tabular-nums text-slate-400">{num(weight)}</span>
             </span>
-            <span className="mt-1 block h-1 overflow-hidden rounded-full bg-white/[0.06]">
+            <span className="mt-0.5 block h-[3px] overflow-hidden rounded-full bg-white/[0.06]">
               <span
                 className="block h-full rounded-full bg-gradient-to-r from-amber-400 to-neon-cyan transition-[width] duration-500"
                 style={{ width: `${total ? (weight / total) * 100 : 0}%` }}
@@ -111,7 +111,7 @@ export function StatsPanel({ analysis, equity, hasHero, selected, onToggle, onHo
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-3">
       <DistributionBar analysis={analysis} />
 
       <div>

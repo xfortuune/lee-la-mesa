@@ -41,6 +41,13 @@ export const CARD_SIZES = {
     cornerSuit: 'text-xs sm:text-lg',
     center: 'pt-3 text-3xl sm:text-5xl',
   },
+  xs: {
+    box: 'h-14 w-10 rounded-md',
+    corner: 'left-0.5 top-0.5',
+    rank: 'text-sm',
+    cornerSuit: 'text-[10px]',
+    center: 'pt-2 text-xl',
+  },
   sm: {
     box: 'h-[4.25rem] w-12 rounded-lg sm:h-20 sm:w-14',
     corner: 'left-1 top-0.5',

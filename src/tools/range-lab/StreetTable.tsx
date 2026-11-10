@@ -55,12 +55,12 @@ export function StreetTable({
   );
 
   return (
-    <div className={busy ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+    <div className={`flex min-h-0 flex-1 flex-col transition-opacity ${busy ? 'opacity-60' : ''}`}>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-base font-bold text-white">{street === 'turn' ? t.turnTable : t.riverTable}</h3>
         <p className="text-xs text-slate-500">{t.tableHint}</p>
       </div>
-      <div className="max-h-[32rem] overflow-y-auto rounded-2xl border border-white/10">
+      <div className="max-h-[32rem] overflow-y-auto rounded-2xl border border-white/10 lg:max-h-none lg:min-h-0 lg:flex-1">
         <table className="w-full border-collapse text-sm">
           <thead className="sticky top-0 bg-[#0a0c1c]/95 backdrop-blur">
             <tr className="text-left">
