@@ -5,6 +5,7 @@ import { Home } from './pages/Home';
 import { useHashRoute } from './router';
 import Calculator from './tools/calculator/Calculator';
 import HandReview from './tools/hand-review/HandReview';
+import RangeLab from './tools/range-lab/RangeLab';
 import OutsTrainer from './tools/outs/OutsTrainer';
 import ReadTheBoard from './tools/read-the-board/ReadTheBoard';
 import { APP_NAME, TOOLS } from './tools/registry';
@@ -27,6 +28,8 @@ export default function App() {
       return <OutsTrainer />;
     case 'hand-review':
       return <HandReview />;
+    case 'range-lab':
+      return <RangeLab />;
     case 'glossary':
       return <Glossary />;
     default:

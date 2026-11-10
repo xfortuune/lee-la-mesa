@@ -13,8 +13,8 @@ import {
 const byEs = (name: string) => TERMS.find((t) => t.es.term === name)!;
 
 describe('glossary', () => {
-  it('has 380 terms', () => {
-    expect(TERMS.length).toBe(380);
+  it('has 381 terms', () => {
+    expect(TERMS.length).toBe(381);
   });
 
   it('no Spanish name or alias is shared between terms', () => {

@@ -196,6 +196,13 @@ export const TERMS_P_Z: Term[] = [
     category: 'strategy',
     en: { term: 'Range', def: 'The set of hands a player can have in a spot. Think in ranges, not in one specific hand.' },
     es: { term: 'Rango', aka: ['Range', 'Rangos'], def: 'Conjunto de manos que puede tener un jugador en una situación. Se piensa en rangos, no en una mano concreta.' },
+    tool: 'range-lab',
+  },
+  {
+    category: 'hands',
+    en: { term: 'Combo', def: 'One exact way to hold a hand, suits included. AKs has 4 combos, AKo 12 and a pocket pair 6; 1326 in total.' },
+    es: { term: 'Combo', aka: ['Combinación', 'Combos'], def: 'Cada forma concreta de tener una mano, con sus palos. AKs tiene 4 combos, AKo 12 y una pareja 6; en total hay 1326.' },
+    tool: 'range-lab',
   },
   {
     category: 'strategy',

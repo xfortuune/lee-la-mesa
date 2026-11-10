@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { SUIT_NAME, SUIT_TEXT, cardKey, cardName } from '../../components/cardStyles';
-import { useLang } from '../../i18n/lang';
-import { type Card, RANKS, SUITS, rankLabel } from '../../logic';
+import { SUIT_NAME, SUIT_TEXT, cardKey, cardName } from './cardStyles';
+import { useLang } from '../i18n/lang';
+import { type Card, RANKS, SUITS, rankLabel } from '../logic';
 
 interface Props {
   title: string;

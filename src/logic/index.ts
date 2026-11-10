@@ -7,3 +7,4 @@ export * from './outs';
 export * from './hand-history';
 export * from './winamax';
 export * from './hand-analysis';
+export * from './ranges';

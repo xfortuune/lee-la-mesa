@@ -1,5 +1,6 @@
 // Poker glossary types.
 import type { Lang } from '../i18n/lang';
+import type { ToolId } from '../tools/registry';
 
 export type Category =
   | 'hands'
@@ -55,4 +56,6 @@ export interface Term {
   en: { term: string; def: string };
   /** Spanish name, other names people search for, and definition. */
   es: { term: string; aka?: string[]; def: string };
+  /** Hub tool where the idea can be practised. */
+  tool?: ToolId;
 }

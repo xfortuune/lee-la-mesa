@@ -11,7 +11,7 @@ switch at the top right changes the whole site and the choice is remembered.
 | 02 | Calculator | `#/calculator` | Available |
 | 03 | Outs | `#/outs` | Available |
 | 04 | Hand Review | `#/hand-review` | Available, with automatic AI review |
-| 05 | — | — | Coming soon |
+| 05 | Range Lab | `#/range-lab` | Available |
 | 06 | Glossary | `#/glossary` | Available |
 
 Old Spanish routes (`#/lee-la-mesa`, `#/calculadora`, `#/diccionario`) redirect to the new ones.
@@ -80,9 +80,38 @@ npx wrangler secret put ANTHROPIC_API_KEY
 npm run deploy
 ```
 
+## 05 · Range Lab
+
+A range analyzer: paint a range on the 13×13 grid, deal a board and see how the range hits it.
+
+- **Grid**: click or drag to paint (with a weight from 5 to 100 %); **Suits** mode, a right-click
+  or `E` on a focused cell picks single combos and the hand's weight. Arrow keys move around the
+  grid; `Enter`/`Space` toggles a cell.
+- **Shortcuts**: Top X % slider (by combos, using a fixed preflop ranking), add all pairs /
+  suited hands / broadways, clear, invert, and indicative 6-max presets (UTG, HJ, CO, BTN, SB,
+  3-bet).
+- **Text**: import and export in standard notation (`AA-TT, AKs-ATs, KQo, A5s+, 22+, AhKh, AKo:50`)
+  and save named ranges in `localStorage`.
+- **Board and Hero**: board and Hero cards remove the combos they block; the live / total combo
+  counter is always visible.
+- **Stats**: every live combo gets one made hand (straight flush → nothing) and any number of
+  draws, with weighted combos, % and cumulative %. Hovering a category highlights its combos on
+  the grid; tick categories and **Keep these** / **Remove these** to narrow the range (with
+  undo). Distribution bar: strong / medium / draws / air.
+- **Equity**: Hero vs the range (exact on the turn and river, Monte Carlo before) and vs each
+  made-hand category; without Hero, the range vs a random hand.
+- **Turn / River**: every possible next card with the % of top pair or better, the % of draws,
+  the change and Hero's equity; sortable, and a tap puts the card on the board.
+- Equity and the turn/river table run in a Web Worker. Keyboard: `R` random flop, `C` clear
+  range, `Z` undo. Rules and decisions in `NOTES.md`.
+
+The preflop ranking (`src/logic/ranges/ranking.ts`) is generated once with our own equity
+engine (each hand vs a random hand, 60,000 Monte Carlo samples, seed 169):
+`npx tsx scripts/generate-ranking.mts`.
+
 ## 06 · Glossary
 
-380 poker terms collected from the
+381 poker terms collected from the
 [Poker Red](https://www.poker-red.com/aprender-poker/diccionario-de-poker) and
 [ZerosPoker](https://zerospoker.com/glosario/) glossaries, deduplicated, with original
 definitions in both languages. Search works across both languages, without accents.
@@ -109,6 +138,8 @@ Every push to `main` runs the tests and deploys to GitHub Pages (`.github/workfl
   - `outs.ts` — counting outs, rule of 2 and 4, and dealing spots.
   - `hand-history.ts`, `winamax.ts` — hand history model and Winamax parsers (text, replayer JSON, links).
   - `hand-analysis.ts` — positions, pot odds, SPR and equity per decision, and the AI prompt.
+  - `ranges/` — Range Lab: combos, notation, presets and preflop ranking, made hands and draws,
+    equity vs a weighted range and the turn/river table.
   - `fixtures/` — anonymised sample hands for the tests.
   - `*.test.ts` — tests.
 - `src/glossary/` — glossary terms (EN + ES), search and term of the day.
@@ -117,8 +148,9 @@ Every push to `main` runs the tests and deploys to GitHub Pages (`.github/workfl
 - `src/pages/` — home page (hub) and glossary page.
 - `src/router.ts` — minimal hash router, with redirects from the old Spanish routes.
 - `src/tools/registry.ts` — list of hub tools.
-- `src/tools/read-the-board/`, `src/tools/calculator/`, `src/tools/outs/`, `src/tools/hand-review/` — tool UIs.
-- `src/components/` — shared components (cards, header, trainer pieces, language switch).
+- `src/tools/read-the-board/`, `src/tools/calculator/`, `src/tools/outs/`, `src/tools/hand-review/`,
+  `src/tools/range-lab/` — tool UIs.
+- `src/components/` — shared components (cards, card picker, header, trainer pieces, language switch).
 - `src/lib/` — shared score storage and the migration of old localStorage keys.
 - `NOTES.md` — cases the rules do not cover clearly and the provisional decisions taken.
 

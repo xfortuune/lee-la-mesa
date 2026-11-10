@@ -1,0 +1,686 @@
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { CardPicker } from '../../components/CardPicker';
+import { CardSlot } from '../../components/CardSlot';
+import { cardKey } from '../../components/cardStyles';
+import { ToolHeader, headerButtonClass } from '../../components/ToolHeader';
+import { useLang } from '../../i18n/lang';
+import {
+  ALL_HANDS,
+  type Card,
+  type Category,
+  type ComboKey,
+  GROUPS,
+  type HandKey,
+  type NextCardRow,
+  PRESETS,
+  type PresetId,
+  type Range,
+  RangeParseError,
+  type RangeEquityResult,
+  TOTAL_COMBOS,
+  analyzeRange,
+  combosOf,
+  filterRange,
+  formatRange,
+  fullDeck,
+  invertRange,
+  parseRange,
+  presetRange,
+  rangeSize,
+  setHand,
+  shuffle,
+  topPercent,
+} from '../../logic';
+import { toolById } from '../registry';
+import { HandEditor } from './HandEditor';
+import { type CellInfo, RangeGrid } from './RangeGrid';
+import { StatsPanel } from './StatsPanel';
+import { StreetTable } from './StreetTable';
+import { PRESET_LABELS, T } from './texts';
+import { useRangeTask } from './useRangeTask';
+
+const TOOL = toolById('range-lab');
+const SAVED_KEY = 'pokertoolbox:range-lab:saved';
+const BOARD_LABELS = ['Flop', 'Flop', 'Flop', 'Turn', 'River'];
+const MAX_HISTORY = 50;
+
+type Tab = 'range' | 'board' | 'stats' | 'streets';
+type Slot = { kind: 'board' | 'hero'; i: number };
+interface Saved {
+  name: string;
+  text: string;
+}
+
+const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
+const num = (x: number) => (Math.round(x * 10) / 10).toString();
+
+function loadSaved(): Saved[] {
+  try {
+    const raw = localStorage.getItem(SAVED_KEY);
+    const list = raw ? (JSON.parse(raw) as Saved[]) : [];
+    return Array.isArray(list) ? list.filter((s) => typeof s?.name === 'string' && typeof s?.text === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function storeSaved(list: Saved[]) {
+  try {
+    localStorage.setItem(SAVED_KEY, JSON.stringify(list));
+  } catch {
+    // Private mode or full storage: the list just won't persist.
+  }
+}
+
+function Panel({ title, eyebrow, children, className = '' }: { title?: string; eyebrow?: string; children: ReactNode; className?: string }) {
+  return (
+    <section className={`rounded-3xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur sm:p-5 ${className}`}>
+      {(title || eyebrow) && (
+        <div className="mb-3">
+          {eyebrow && <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-amber-300/80">{eyebrow}</p>}
+          {title && <h2 className="text-base font-bold text-white">{title}</h2>}
+        </div>
+      )}
+      {children}
+    </section>
+  );
+}
+
+const chip =
+  'rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-slate-200 transition hover:border-amber-300/60 hover:text-white hover:shadow-[0_0_14px_-6px_#fbbf24]';
+
+export default function RangeLab() {
+  const { lang } = useLang();
+  const t = T[lang];
+
+  const [range, setRange] = useState<Range>(() => presetRange('co'));
+  const [history, setHistory] = useState<Range[]>([]);
+  const [mode, setMode] = useState<'paint' | 'edit'>('paint');
+  const [paintWeight, setPaintWeight] = useState(1);
+  const [topPct, setTopPct] = useState(20);
+  const [board, setBoard] = useState<(Card | null)[]>([null, null, null, null, null]);
+  const [hero, setHero] = useState<(Card | null)[]>([null, null]);
+  const [picking, setPicking] = useState<Slot | null>(null);
+  const [editHand, setEditHand] = useState<HandKey | null>(null);
+  const [selected, setSelected] = useState<Set<Category>>(new Set());
+  const [hover, setHover] = useState<Category | null>(null);
+  const [draft, setDraft] = useState<string | null>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState<Saved[]>(loadSaved);
+  const [saveName, setSaveName] = useState('');
+  const [tab, setTab] = useState<Tab>('range');
+
+  // --- Range edits -------------------------------------------------------------------------
+  const snapshot = useCallback(() => setHistory((h) => [...h.slice(-MAX_HISTORY + 1), range]), [range]);
+  const commit = useCallback(
+    (next: Range) => {
+      snapshot();
+      setRange(next);
+      setDraft(null);
+      setParseError(null);
+      setSelected(new Set());
+    },
+    [snapshot],
+  );
+  const undo = useCallback(() => {
+    if (!history.length) return;
+    setRange(history[history.length - 1]);
+    setHistory(history.slice(0, -1));
+    setDraft(null);
+  }, [history]);
+
+  const addHands = (hands: HandKey[]) => commit(hands.reduce((r, h) => setHand(r, h, paintWeight), range));
+
+  // --- Board and Hero ----------------------------------------------------------------------
+  const boardCards = useMemo(() => board.filter((c): c is Card => !!c), [board]);
+  const heroCards = useMemo(() => hero.filter((c): c is Card => !!c), [hero]);
+  const hasHero = heroCards.length === 2;
+  const dead = useMemo(() => [...boardCards, ...heroCards], [boardCards, heroCards]);
+  const deadKeys = useMemo(() => new Set(dead.map(cardKey)), [dead]);
+
+  const randomFlop = useCallback(() => {
+    const heroKeys = new Set(hero.filter(Boolean).map((c) => cardKey(c!)));
+    const deck = shuffle(fullDeck().filter((c) => !heroKeys.has(cardKey(c))));
+    setBoard([deck[0], deck[1], deck[2], null, null]);
+    setSelected(new Set());
+  }, [hero]);
+
+  const usedElsewhere = useMemo(() => {
+    const set = new Set<string>();
+    board.forEach((c, i) => c && !(picking?.kind === 'board' && picking.i === i) && set.add(cardKey(c)));
+    hero.forEach((c, i) => c && !(picking?.kind === 'hero' && picking.i === i) && set.add(cardKey(c)));
+    return set;
+  }, [board, hero, picking]);
+
+  const setSlot = (s: Slot, card: Card | null) => {
+    const update = (arr: (Card | null)[]) => arr.map((c, i) => (i === s.i ? card : c));
+    if (s.kind === 'board') setBoard(update);
+    else setHero(update);
+    setSelected(new Set());
+  };
+
+  const pick = (card: Card) => {
+    if (!picking) return;
+    setSlot(picking, card);
+    let next: Slot | null = null;
+    if (picking.kind === 'board') {
+      const i = board.findIndex((c, idx) => idx > picking.i && idx < 3 && !c);
+      if (i >= 0) next = { kind: 'board', i };
+    } else if (!hero[1 - picking.i]) next = { kind: 'hero', i: 1 - picking.i };
+    setPicking(next);
+  };
+
+  // --- Analysis ----------------------------------------------------------------------------
+  const analysis = useMemo(
+    () => (boardCards.length >= 3 ? analyzeRange(range, boardCards, heroCards) : null),
+    [range, boardCards, heroCards],
+  );
+  const totalAll = useMemo(() => rangeSize(range), [range]);
+  const live = analysis ? analysis.total : rangeSize(range, dead);
+
+  const highlight = useMemo<Set<ComboKey> | null>(() => {
+    if (!hover || !analysis) return null;
+    const stat = (analysis.made as Record<string, { combos: ComboKey[] }>)[hover] ?? (analysis.draws as Record<string, { combos: ComboKey[] }>)[hover];
+    return new Set(stat?.combos ?? []);
+  }, [hover, analysis]);
+
+  const cells = useMemo(() => {
+    const m = new Map<HandKey, CellInfo>();
+    for (const hand of ALL_HANDS) {
+      const combos = combosOf(hand);
+      let inRange = 0;
+      let liveN = 0;
+      let w = 0;
+      let hl = 0;
+      for (const c of combos) {
+        const cw = range[c.key];
+        if (!cw) continue;
+        inRange++;
+        w += cw;
+        if (!c.cards.some((x) => deadKeys.has(cardKey(x)))) liveN++;
+        if (highlight?.has(c.key)) hl++;
+      }
+      m.set(hand, { total: combos.length, inRange, live: liveN, weight: inRange ? w / inRange : 0, highlighted: hl });
+    }
+    return m;
+  }, [range, deadKeys, highlight]);
+
+  // --- Worker tasks ------------------------------------------------------------------------
+  const boardContiguous = board.slice(0, boardCards.length).every(Boolean);
+  const equity = useRangeTask<RangeEquityResult>(
+    live > 0 && boardContiguous ? { kind: 'equity', hero: hasHero ? heroCards : null, range, board: boardCards } : null,
+  );
+  const tableStreet = boardContiguous && boardCards.length === 3 ? 'turn' : boardContiguous && boardCards.length === 4 ? 'river' : null;
+  const table = useRangeTask<NextCardRow[]>(
+    tableStreet && live > 0 ? { kind: 'table', hero: hasHero ? heroCards : null, range, board: boardCards } : null,
+  );
+
+  // --- Filters -----------------------------------------------------------------------------
+  const toggle = (c: Category) =>
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(c)) n.delete(c);
+      else n.add(c);
+      return n;
+    });
+  const applyFilter = (m: 'keep' | 'remove') => {
+    if (!analysis || !selected.size) return;
+    // Combos blocked by the board or Hero can't pass a filter, so they leave the range.
+    commit(filterRange(analysis, [...selected], m));
+  };
+
+  // --- Text and saved ranges ---------------------------------------------------------------
+  const text = draft ?? formatRange(range);
+  const applyText = () => {
+    try {
+      commit(parseRange(text));
+    } catch (e) {
+      setParseError(e instanceof RangeParseError ? e.token : String(e));
+    }
+  };
+  const copyText = async () => {
+    try {
+      await navigator.clipboard.writeText(formatRange(range));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard blocked: the text is still selectable in the box.
+    }
+  };
+  const save = () => {
+    const name = saveName.trim();
+    if (!name) return;
+    const list = [...saved.filter((s) => s.name !== name), { name, text: formatRange(range) }];
+    setSaved(list);
+    storeSaved(list);
+    setSaveName('');
+  };
+  const removeSaved = (name: string) => {
+    const list = saved.filter((s) => s.name !== name);
+    setSaved(list);
+    storeSaved(list);
+  };
+
+  // --- Shortcuts ---------------------------------------------------------------------------
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || picking || editHand) return;
+      const el = e.target as HTMLElement;
+      if (el.closest('input, textarea, select')) return;
+      const k = e.key.toLowerCase();
+      if (k === 'r') randomFlop();
+      else if (k === 'c') commit({});
+      else if (k === 'z') undo();
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [picking, editHand, randomFlop, commit, undo]);
+
+  // --- Layout ------------------------------------------------------------------------------
+  const tabs: [Tab, string][] = [
+    ['range', t.range],
+    ['board', t.board],
+    ['stats', t.stats],
+    ['streets', t.streets],
+  ];
+  const show = (x: Tab) => (tab === x ? '' : 'hidden lg:block');
+
+  const counter = (
+    <div className="flex items-baseline gap-2 font-mono tabular-nums">
+      <span className="text-lg font-bold text-amber-200 sm:text-xl">{num(live)}</span>
+      <span className="text-xs text-slate-500">/ {num(totalAll)} {t.combos}</span>
+      <span className="text-xs text-slate-400">· {pct(totalAll / TOTAL_COMBOS)}</span>
+    </div>
+  );
+
+  const rangePanel = (
+    <div className={`flex flex-col gap-4 ${show('range')}`}>
+      <Panel>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div role="radiogroup" aria-label={t.paint} className="flex rounded-xl border border-white/10 p-0.5">
+            {(['paint', 'edit'] as const).map((m) => (
+              <button
+                key={m}
+                role="radio"
+                aria-checked={mode === m}
+                onClick={() => setMode(m)}
+                className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${mode === m ? 'bg-amber-300/20 text-amber-100' : 'text-slate-400 hover:text-white'}`}
+              >
+                {m === 'paint' ? t.paint : t.edit}
+              </button>
+            ))}
+          </div>
+          <label className="flex min-w-40 flex-1 items-center gap-2 text-xs text-slate-400">
+            {t.weight}
+            <input
+              type="range"
+              min={5}
+              max={100}
+              step={5}
+              value={Math.round(paintWeight * 100)}
+              onChange={(e) => setPaintWeight(Number(e.target.value) / 100)}
+              className="flex-1 accent-amber-400"
+            />
+            <span className="w-10 text-right font-mono text-amber-200">{Math.round(paintWeight * 100)}%</span>
+          </label>
+        </div>
+
+        <RangeGrid
+          cells={cells}
+          mode={mode}
+          paintWeight={paintWeight}
+          hasHighlight={!!highlight}
+          onStrokeStart={() => {
+            snapshot();
+            setDraft(null);
+            setSelected(new Set());
+          }}
+          onPaint={(hand, add) => setRange((r) => setHand(r, hand, add ? paintWeight : 0))}
+          onEdit={setEditHand}
+        />
+        <p className="mt-2 text-[11px] text-slate-500">{t.paintHint}</p>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button onClick={() => commit({})} className={chip}>
+            {t.clear}
+          </button>
+          <button onClick={() => commit(invertRange(range))} className={chip}>
+            {t.invert}
+          </button>
+          <button onClick={undo} disabled={!history.length} className={`${chip} disabled:opacity-40`}>
+            ↶ {t.undo}
+          </button>
+        </div>
+      </Panel>
+
+      <Panel>
+        <label className="flex items-center gap-3 text-sm">
+          <span className="w-10 font-mono text-xs uppercase text-slate-400">{t.top}</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={0.5}
+            value={topPct}
+            onPointerDown={snapshot}
+            onKeyDown={snapshot}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setTopPct(v);
+              setRange(topPercent(v));
+              setDraft(null);
+              setSelected(new Set());
+            }}
+            className="flex-1 accent-amber-400"
+          />
+          <span className="w-14 text-right font-mono tabular-nums text-amber-200">{topPct}%</span>
+        </label>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">{t.groups}</span>
+          <button onClick={() => addHands(GROUPS.pairs)} className={chip}>
+            {t.pairs}
+          </button>
+          <button onClick={() => addHands(GROUPS.suited)} className={chip}>
+            {t.suited}
+          </button>
+          <button onClick={() => addHands(GROUPS.broadways)} className={chip}>
+            {t.broadways}
+          </button>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">{t.presets}</span>
+          {(Object.keys(PRESETS) as PresetId[]).map((id) => (
+            <button key={id} onClick={() => commit(presetRange(id))} className={chip}>
+              {PRESET_LABELS[id]}
+            </button>
+          ))}
+        </div>
+        <p className="mt-1.5 text-[11px] text-slate-500">{t.presetsNote}</p>
+      </Panel>
+
+      <Panel eyebrow={t.text}>
+        <textarea
+          value={text}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            setParseError(null);
+          }}
+          rows={3}
+          spellCheck={false}
+          aria-label={t.text}
+          className="w-full resize-y rounded-xl border border-white/10 bg-black/30 p-3 font-mono text-xs text-slate-200 outline-none focus:border-amber-300/60"
+        />
+        {parseError && (
+          <p role="alert" className="mt-1 text-xs text-rose-300">
+            {t.parseError}: “{parseError}”
+          </p>
+        )}
+        <div className="mt-2 flex gap-2">
+          <button onClick={applyText} disabled={draft === null} className={`${chip} disabled:opacity-40`}>
+            {t.apply}
+          </button>
+          <button onClick={copyText} className={chip}>
+            {copied ? `✓ ${t.copied}` : t.copy}
+          </button>
+        </div>
+
+        <div className="mt-4 border-t border-white/[0.06] pt-3">
+          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-slate-500">{t.saved}</p>
+          <form
+            className="flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              save();
+            }}
+          >
+            <input
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              placeholder={t.name}
+              aria-label={t.name}
+              maxLength={40}
+              className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-sm text-white outline-none focus:border-amber-300/60"
+            />
+            <button type="submit" disabled={!saveName.trim()} className={`${chip} disabled:opacity-40`}>
+              {t.save}
+            </button>
+          </form>
+          {saved.length ? (
+            <ul className="mt-2 flex flex-col gap-1">
+              {saved.map((s) => (
+                <li key={s.name} className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-white/[0.03]">
+                  <span className="min-w-0 flex-1 truncate text-sm text-slate-200" title={s.text}>
+                    {s.name}
+                  </span>
+                  <button
+                    onClick={() => {
+                      try {
+                        commit(parseRange(s.text));
+                      } catch {
+                        // A broken entry is ignored.
+                      }
+                    }}
+                    className="text-xs text-amber-200 hover:underline"
+                  >
+                    {t.load}
+                  </button>
+                  <button onClick={() => removeSaved(s.name)} aria-label={`${t.delete} ${s.name}`} className="text-xs text-slate-500 hover:text-rose-300">
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-xs text-slate-500">{t.noSaved}</p>
+          )}
+        </div>
+      </Panel>
+    </div>
+  );
+
+  const eq = equity.result;
+  const boardPanel = (
+    <div className={`flex flex-col gap-4 ${show('board')}`}>
+      <section
+        aria-label={t.table}
+        className="relative overflow-hidden rounded-[2rem] border border-amber-300/20 bg-[radial-gradient(ellipse_at_center,_#2a2210_0%,_#14110a_50%,_#070918_100%)] px-3 py-5 shadow-[0_0_60px_-24px_#fbbf24,inset_0_0_60px_rgba(0,0,0,0.6)]"
+      >
+        <div className="relative flex flex-wrap items-center justify-between gap-2 px-1">
+          <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-slate-500">{t.table}</span>
+          <div className="flex gap-2">
+            <button onClick={randomFlop} className={chip}>
+              ⟳ {t.randomBoard}
+            </button>
+            <button onClick={() => setBoard([null, null, null, null, null])} className={chip}>
+              {t.clearBoard}
+            </button>
+          </div>
+        </div>
+        <div className="relative mt-4 flex justify-center gap-1.5 sm:gap-2">
+          {board.map((c, i) => (
+            <div key={i} className={`flex flex-col items-center gap-1 ${i >= 3 ? 'ml-1 sm:ml-2' : ''}`}>
+              <CardSlot
+                card={c}
+                size="sm"
+                label={`${t.card} ${i + 1} ${t.ofBoard}`}
+                active={picking?.kind === 'board' && picking.i === i}
+                onClick={() => setPicking({ kind: 'board', i })}
+              />
+              <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-slate-500">{BOARD_LABELS[i]}</span>
+            </div>
+          ))}
+        </div>
+        <div className="relative mt-5 flex items-center justify-center gap-4">
+          <div className="flex gap-1.5">
+            {hero.map((c, i) => (
+              <CardSlot
+                key={i}
+                card={c}
+                size="sm"
+                label={`${t.heroCard} ${i + 1}`}
+                active={picking?.kind === 'hero' && picking.i === i}
+                onClick={() => setPicking({ kind: 'hero', i })}
+              />
+            ))}
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-white">{t.hero}</p>
+            <p className="max-w-40 text-[11px] text-slate-500">{t.heroHint}</p>
+            {heroCards.length > 0 && (
+              <button onClick={() => setHero([null, null])} className="mt-1 text-[11px] text-rose-300 hover:underline">
+                {t.clear}
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <Panel eyebrow={t.equity} title={hasHero ? t.heroVsRange : t.rangeVsRandom}>
+        <div className="flex items-end justify-between gap-3">
+          <span className="font-mono text-4xl font-bold tabular-nums text-white">
+            {live > 0 && eq ? pct(eq.equity) : '—'}
+          </span>
+          <span className="pb-1 text-right font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500">
+            {equity.busy ? (
+              <span className="flex items-center gap-2">
+                <span className="h-2 w-2 animate-ping rounded-full bg-amber-300" />
+                {t.calculating}
+              </span>
+            ) : eq ? (
+              `${eq.method === 'exact' ? t.exact : t.monteCarlo} · ${eq.samples.toLocaleString(t.locale)}`
+            ) : (
+              ''
+            )}
+          </span>
+        </div>
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-amber-400 to-neon-cyan transition-[width] duration-500"
+            style={{ width: live > 0 && eq ? `${eq.equity * 100}%` : '0%' }}
+          />
+        </div>
+      </Panel>
+    </div>
+  );
+
+  const statsPanel = (
+    <Panel className={show('stats')} eyebrow={t.stats}>
+      {live === 0 ? (
+        <p className="text-sm text-slate-400">{t.emptyRange}</p>
+      ) : !analysis ? (
+        <p className="text-sm text-slate-400">{t.needFlop}</p>
+      ) : (
+        <StatsPanel
+          analysis={analysis}
+          equity={equity.busy ? null : eq}
+          hasHero={hasHero}
+          selected={selected}
+          onToggle={toggle}
+          onHover={setHover}
+          onFilter={applyFilter}
+        />
+      )}
+    </Panel>
+  );
+
+  const streetsPanel = (
+    <Panel className={show('streets')}>
+      {tableStreet && live > 0 ? (
+        table.result ? (
+          <StreetTable
+            rows={table.result}
+            street={tableStreet}
+            busy={table.busy}
+            onPick={(card) => setSlot({ kind: 'board', i: boardCards.length }, card)}
+          />
+        ) : (
+          <p className="flex items-center gap-2 text-sm text-slate-400">
+            <span className="h-2 w-2 animate-ping rounded-full bg-amber-300" />
+            {t.calculating}
+          </p>
+        )
+      ) : (
+        <p className="text-sm text-slate-400">{t.needFlopTable}</p>
+      )}
+    </Panel>
+  );
+
+  return (
+    <div className="relative mx-auto flex min-h-dvh max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6 sm:py-8">
+      <ToolHeader
+        title={TOOL.text[lang].name}
+        index="05"
+        actions={
+          <button onClick={() => commit({})} className={`${headerButtonClass} hidden sm:block`}>
+            {t.clear}
+          </button>
+        }
+      />
+
+      {/* Sticky combo counter and, on mobile, the tabs */}
+      <div className="sticky top-0 z-30 -mx-4 flex flex-col gap-2 border-b border-white/[0.06] bg-void/85 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6">
+        <div className="flex items-center justify-between gap-3">
+          {counter}
+          <span className="hidden font-mono text-[10px] uppercase tracking-[0.15em] text-slate-600 md:block">{t.shortcuts}</span>
+        </div>
+        <div role="tablist" className="grid grid-cols-4 gap-1 lg:hidden">
+          {tabs.map(([id, label]) => (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={tab === id}
+              onClick={() => setTab(id)}
+              className={`rounded-lg px-1 py-1.5 text-xs font-semibold transition ${
+                tab === id ? 'bg-amber-300/20 text-amber-100 shadow-[0_0_14px_-6px_#fbbf24]' : 'text-slate-400'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start">
+        {rangePanel}
+        <div className="flex flex-col gap-4">
+          {boardPanel}
+          {statsPanel}
+          {streetsPanel}
+        </div>
+      </div>
+
+      {picking && (
+        <CardPicker
+          title={picking.kind === 'board' ? `${t.table} · ${BOARD_LABELS[picking.i]}` : `${t.hero} · ${t.card} ${picking.i + 1}`}
+          current={(picking.kind === 'board' ? board : hero)[picking.i]}
+          used={usedElsewhere}
+          onPick={pick}
+          onClear={() => {
+            setSlot(picking, null);
+            setPicking(null);
+          }}
+          onClose={() => setPicking(null)}
+        />
+      )}
+      {editHand && (
+        <HandEditor
+          hand={editHand}
+          range={range}
+          dead={deadKeys}
+          paintWeight={paintWeight}
+          onChange={(next) => {
+            snapshot();
+            setRange(next);
+            setDraft(null);
+          }}
+          onClose={() => setEditHand(null)}
+        />
+      )}
+    </div>
+  );
+}

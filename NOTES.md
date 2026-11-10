@@ -92,3 +92,70 @@ with the rule of 2 and 4, and spots are dealt on the flop and the turn.
   adjustment for many outs (e.g. 15 outs × 4 = 60% even though the exact value is 54.1%).
   The exact % is always shown after checking.
 - The percentage is graded with the correct outs even if you counted the outs wrong.
+
+# Tool 05 · Range Lab
+
+## 10. Combos and weights
+
+- A combo's weight goes from 0 to 1 and multiplies it in every statistic ("combos" are always
+  weighted). In text, `AKo:50` and `AKo:0.5` mean the same; weights are exported as whole percents.
+- Painting a cell applies the current paint weight to all its combos; painting over a cell that
+  already has all its combos at that weight removes it.
+- Combos blocked by the board or Hero stay in the range (they come back if the board changes),
+  but they are left out of every statistic. The counter shows live / total.
+- **Keep these / Remove these** work on the live combos only, so blocked combos leave the range.
+
+## 11. Made hands
+
+Each live combo counts in exactly one made-hand category, the best one:
+
+- **Straight or better** counts only if it beats what the board alone makes (on a 5-card
+  board) and the quads are not all on the board. Otherwise the combo falls back to its pair
+  reading below.
+- **Set**: pocket pair + one board card. **Trips**: one hole card + a board pair.
+- **Two pair**: both hole cards pair the board, or one hole card pairs the board and the board is
+  paired (as the spec says). This is why a paired turn (e.g. K-J-7-7) moves many top-pair combos
+  into two pair.
+- **Top pair kicker**: the kicker ladder is the ranks that are neither the pair nor on the board.
+  The best two available kickers are **good**, the next three **medium**, the rest **weak**.
+  E.g. on A-K-7, AQ and AJ have a good kicker, AT/A9/A8 medium, A6 and below weak.
+- **Pocket pair below the top card** (the spec's "between the 1st and 2nd card"): below the
+  highest board card but above the lowest one. The spec's own example (QQ on A♠K♦7♣) is below
+  both A and K, so the literal reading would not include it; we follow the example.
+- **Pocket pair below the board**: below every board card. Middle / bottom pair: one hole card
+  pairs the second / any lower board card.
+
+## 12. Draws
+
+- Draws are only counted before the river, and a combo can have several on top of its made hand.
+- **Flush draw**: exactly 4 cards of a suit with at least one of ours and no flush made.
+  **Nut flush draw**: we hold the highest card of that suit that is not on the board.
+- **Straight draws**: for each 5-rank window (the ace also plays low) with at least one of our
+  ranks not on the board, a window missing one rank gives an out. 2+ different outs = open-ender
+  (double gutshots included), 1 out = gutshot. No straight draw if the straight is made.
+- **Combo draw** = flush draw + any straight draw.
+- **Backdoor flush** (flop only): exactly 3 cards of a suit with at least one of ours, and no
+  flush draw. The spec's example said T♥9♥ has one on A♠K♦7♣, but there are no hearts on that
+  board, so it only has 2 hearts. T9 in ♠, ♦ or ♣ does; the test checks this.
+- **Backdoor straight** (flop only): a window missing exactly two ranks, and no straight draw.
+- **Overcards**: ace high or nothing, with both hole cards above every board card.
+- The distribution bar's **Draws** group only counts flush draws, open-enders and gutshots (not
+  backdoors or overcards). **Strong** is two pair or better plus overpairs; **Medium** is top
+  pair, pocket pair below the top card and middle pair; the rest is **Air**.
+
+## 13. Turn / river table
+
+- With a Hero, the table has 47 rows on the flop (52 − 3 board − 2 Hero), not the "48" the spec
+  mentions; without Hero, 49. On the river, 46 or 44.
+- "Top pair or better" is everything from straight flush down to top pair with a weak kicker.
+- The draws column is hidden on the river table (there are no draws left).
+- Each row's Hero equity uses 1,500 Monte Carlo samples to keep the table fast; the main
+  equity panel uses 30,000 (exact on the turn and river).
+
+## 14. Ranking and presets
+
+- The Top X % ranking orders the 169 hands by equity vs one random hand (60,000 samples, seed
+  169). It adds whole hands while the combo count is below the target, so a percentage can
+  slightly overshoot.
+- Presets are indicative 6-max opening ranges (and a typical 3-bet range), not solver output;
+  the interface says so.

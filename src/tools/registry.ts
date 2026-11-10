@@ -13,7 +13,7 @@ export const SCORE_KEYS = {
   outs: 'pokertoolbox:score:outs',
 };
 
-export type ToolId = 'read-the-board' | 'calculator' | 'outs' | 'hand-review' | 'tool-5' | 'glossary';
+export type ToolId = 'read-the-board' | 'calculator' | 'outs' | 'hand-review' | 'range-lab' | 'glossary';
 
 export interface Tool {
   /** Also the URL route: #/<id>. */
@@ -114,19 +114,23 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
-    id: 'tool-5',
+    id: 'range-lab',
     index: '05',
     text: {
-      en: { name: 'Tool 5', tagline: 'Under construction', description: 'A new training tool is coming soon.' },
+      en: {
+        name: 'Range Lab',
+        tagline: 'Range analyzer',
+        description: 'Paint a range, deal a board and see how it hits: made hands, draws, equity and every turn.',
+      },
       es: {
-        name: 'Herramienta 5',
-        tagline: 'En construcción',
-        description: 'Una nueva herramienta de entrenamiento llegará pronto.',
+        name: 'Laboratorio de rangos',
+        tagline: 'Analizador de rangos',
+        description: 'Pinta un rango, pon una mesa y mira cómo conecta: jugadas, proyectos, equity y cada turn.',
       },
     },
     glyph: '✦',
     accent: '#fbbf24',
-    ready: false,
+    ready: true,
   },
   {
     id: 'glossary',

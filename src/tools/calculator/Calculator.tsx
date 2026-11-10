@@ -1,11 +1,11 @@
 import { type CSSProperties, useCallback, useMemo, useState } from 'react';
-import { PlayingCard } from '../../components/PlayingCard';
-import { CARD_SIZES, type CardSize, cardKey } from '../../components/cardStyles';
+import { CardPicker } from '../../components/CardPicker';
+import { CardSlot } from '../../components/CardSlot';
+import { cardKey } from '../../components/cardStyles';
 import { ToolHeader, headerButtonClass } from '../../components/ToolHeader';
 import { type Lang, useLang } from '../../i18n/lang';
 import { type Card, HAND_CATEGORIES, HAND_LABELS, currentHand } from '../../logic';
 import { toolById } from '../registry';
-import { CardPicker } from './CardPicker';
 import { useEquity } from './useEquity';
 
 const MAX_PLAYERS = 10;
@@ -36,8 +36,6 @@ const T = {
     atRiver: 'By the river',
     handOdds: 'Odds of each final hand',
     hint: 'Tap a slot to pick a card · cards you leave empty are dealt at random',
-    pick: 'Pick',
-    change: 'Change',
     card: 'card',
     ofBoard: 'of the board',
     yourHand: 'your hand',
@@ -67,8 +65,6 @@ const T = {
     atRiver: 'Al river',
     handOdds: 'Probabilidad de cada jugada',
     hint: 'Toca una casilla para elegir carta · las cartas sin elegir se reparten al azar',
-    pick: 'Elegir',
-    change: 'Cambiar',
     card: 'carta',
     ofBoard: 'de la mesa',
     yourHand: 'tu mano',
@@ -83,45 +79,6 @@ type Slot = { kind: 'player'; p: number; i: number } | { kind: 'board'; i: numbe
 const emptyPlayers = (n: number): (Card | null)[][] => Array.from({ length: n }, () => [null, null]);
 const emptyBoard = (): (Card | null)[] => [null, null, null, null, null];
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
-
-function CardSlot({
-  card,
-  size,
-  label,
-  active,
-  onClick,
-  lang,
-}: {
-  card: Card | null;
-  size: CardSize;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  lang: Lang;
-}) {
-  const t = T[lang];
-  const box = CARD_SIZES[size].box;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={`${card ? t.change : t.pick} ${label}`}
-      className={`relative shrink-0 rounded-xl transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neon-cyan ${
-        active ? 'ring-2 ring-neon-cyan ring-offset-2 ring-offset-void' : ''
-      }`}
-    >
-      {card ? (
-        <PlayingCard card={card} size={size} />
-      ) : (
-        <div
-          className={`grid place-items-center border border-dashed border-neon-cyan/30 bg-neon-cyan/[0.03] text-neon-cyan/60 transition hover:border-neon-cyan/70 hover:bg-neon-cyan/10 hover:text-neon-cyan hover:shadow-[0_0_20px_-6px_var(--color-neon-cyan)] ${box}`}
-        >
-          <span className={size === 'sm' ? 'text-lg' : 'text-2xl'}>+</span>
-        </div>
-      )}
-    </button>
-  );
-}
 
 export default function Calculadora() {
   const { lang } = useLang();
@@ -228,7 +185,6 @@ export default function Calculadora() {
                 card={c}
                 size="board"
                 label={`${t.card} ${i + 1} ${t.ofBoard}`}
-                lang={lang}
                 active={picking?.kind === 'board' && picking.i === i}
                 onClick={() => setPicking({ kind: 'board', i })}
               />
@@ -302,7 +258,6 @@ export default function Calculadora() {
                     card={c}
                     size="sm"
                     label={`${t.card} ${i + 1} · ${p === 0 ? t.yourHand : playerName(p)}`}
-                    lang={lang}
                     active={picking?.kind === 'player' && picking.p === p && picking.i === i}
                     onClick={() => setPicking({ kind: 'player', p, i })}
                   />

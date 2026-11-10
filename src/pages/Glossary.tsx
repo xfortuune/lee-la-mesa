@@ -13,7 +13,7 @@ import {
 } from '../glossary';
 import { type Lang, useLang } from '../i18n/lang';
 import { hashParams } from '../router';
-import { APP_NAME, toolById } from '../tools/registry';
+import { APP_NAME, toolById, toolHref } from '../tools/registry';
 
 const CATEGORIES = Object.keys(CATEGORY_LABELS.en) as Category[];
 const LETTERS = ['#', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
@@ -71,6 +71,14 @@ function TermCard({ t, lang }: { t: Term; lang: Lang }) {
         </p>
       )}
       <p className="mt-2 text-sm leading-relaxed text-slate-300">{l.def}</p>
+      {t.tool && (
+        <a
+          href={toolHref(toolById(t.tool))}
+          className="mt-2 inline-block font-mono text-[11px] uppercase tracking-[0.15em] text-[var(--cc)] hover:underline"
+        >
+          → {toolById(t.tool).text[lang].name}
+        </a>
+      )}
     </article>
   );
 }
