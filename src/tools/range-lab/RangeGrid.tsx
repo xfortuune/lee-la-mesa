@@ -180,14 +180,14 @@ export function RangeGrid({ cells, mode, paintWeight, hasHighlight, onStrokeStar
                   />
                 )}
                 <span
-                  className={`relative block text-[8px] font-bold min-[400px]:text-[9px] sm:text-[11px] ${
+                  className={`relative block text-[8px] font-bold min-[400px]:text-[9px] sm:text-[11px] xl:text-[13px] ${
                     dark ? 'text-[#1a1203]' : c.inRange ? 'text-amber-200' : 'text-slate-400'
                   }`}
                 >
                   {hand}
                 </span>
                 {c.inRange > 0 && (
-                  <span className={`relative hidden text-[8px] sm:block ${dark ? 'text-[#1a1203]/70' : 'text-amber-200/70'}`}>{c.live}</span>
+                  <span className={`relative hidden text-[8px] sm:block xl:text-[10px] ${dark ? 'text-[#1a1203]/70' : 'text-amber-200/70'}`}>{c.live}</span>
                 )}
               </button>
             );

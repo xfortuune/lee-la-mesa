@@ -2,14 +2,12 @@ import { useLang } from '../../i18n/lang';
 import {
   type Category,
   DRAW_CATEGORIES,
-  type DistributionGroup,
   MADE_CATEGORIES,
   type RangeAnalysis,
   type RangeEquityResult,
 } from '../../logic';
-import { CATEGORY_LABELS, GROUP_COLORS, GROUP_LABELS, T } from './texts';
+import { CATEGORY_LABELS, T } from './texts';
 
-const GROUPS: DistributionGroup[] = ['strong', 'medium', 'draws', 'air'];
 const num = (x: number) => (Math.round(x * 10) / 10).toString();
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 
@@ -21,35 +19,6 @@ interface Props {
   onToggle: (c: Category) => void;
   onHover: (c: Category | null) => void;
   onFilter: (mode: 'keep' | 'remove') => void;
-}
-
-export function DistributionBar({ analysis }: { analysis: RangeAnalysis }) {
-  const { lang } = useLang();
-  const t = T[lang];
-  const total = analysis.total || 1;
-  return (
-    <div>
-      <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-slate-500">{t.distribution}</p>
-      <div className="flex h-3 overflow-hidden rounded-full bg-white/[0.06]">
-        {GROUPS.map((g) => (
-          <div
-            key={g}
-            title={`${GROUP_LABELS[lang][g]} ${pct(analysis.groups[g] / total)}`}
-            className="h-full transition-[width] duration-500"
-            style={{ width: `${(analysis.groups[g] / total) * 100}%`, background: GROUP_COLORS[g] }}
-          />
-        ))}
-      </div>
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
-        {GROUPS.map((g) => (
-          <span key={g} className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ background: GROUP_COLORS[g] }} />
-            {GROUP_LABELS[lang][g]} <span className="font-mono text-slate-200">{pct(analysis.groups[g] / total)}</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 export function StatsPanel({ analysis, equity, hasHero, selected, onToggle, onHover, onFilter }: Props) {
@@ -112,8 +81,6 @@ export function StatsPanel({ analysis, equity, hasHero, selected, onToggle, onHo
 
   return (
     <div className="flex flex-col gap-3">
-      <DistributionBar analysis={analysis} />
-
       <div>
         {header(t.madeHands, true)}
         <ul>

@@ -24,6 +24,7 @@ import {
   formatRange,
   fullDeck,
   invertRange,
+  liveCombos,
   parseRange,
   presetRange,
   rangeSize,
@@ -36,7 +37,8 @@ import { HandEditor } from './HandEditor';
 import { type CellInfo, RangeGrid } from './RangeGrid';
 import { StatsPanel } from './StatsPanel';
 import { StreetTable } from './StreetTable';
-import { PRESET_LABELS, T } from './texts';
+import { Distribution, type Segment } from './Distribution';
+import { GROUP_COLORS, GROUP_LABELS, PRESET_LABELS, T } from './texts';
 import { useRangeTask } from './useRangeTask';
 
 const TOOL = toolById('range-lab');
@@ -86,7 +88,17 @@ function useWide() {
   return wide;
 }
 
-function Panel({ title, eyebrow, children, className = '' }: { title?: string; eyebrow?: string; children: ReactNode; className?: string }) {
+function Panel({
+  title,
+  eyebrow,
+  children,
+  className = '',
+}: {
+  title?: string;
+  eyebrow?: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <section className={`rounded-3xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur sm:p-4 ${className}`}>
       {(title || eyebrow) && (
@@ -126,6 +138,8 @@ export default function RangeLab() {
   const [tab, setTab] = useState<Tab>('range');
   const [side, setSide] = useState<'stats' | 'streets'>('stats');
   const [toolsTab, setToolsTab] = useState<ToolsTab>('shortcuts');
+  /** Null: open preflop, folded once there is a flop (to leave room for the stats). */
+  const [toolsOpen, setToolsOpen] = useState<boolean | null>(null);
   const wide = useWide();
 
   // --- Range edits -------------------------------------------------------------------------
@@ -160,6 +174,7 @@ export default function RangeLab() {
     const heroKeys = new Set(hero.filter(Boolean).map((c) => cardKey(c!)));
     const deck = shuffle(fullDeck().filter((c) => !heroKeys.has(cardKey(c))));
     setBoard([deck[0], deck[1], deck[2], null, null]);
+    setToolsOpen(null);
     setSelected(new Set());
   }, [hero]);
 
@@ -195,10 +210,23 @@ export default function RangeLab() {
   );
   const totalAll = useMemo(() => rangeSize(range), [range]);
   const live = analysis ? analysis.total : rangeSize(range, dead);
+  const street = boardCards.length >= 5 ? 'River' : boardCards.length === 4 ? 'Turn' : 'Flop';
+
+  /** Live combos split into pairs, suited and offsuit (shown before the flop). */
+  const composition = useMemo(() => {
+    const w = { pairs: 0, suited: 0, offsuit: 0 };
+    for (const c of liveCombos(range, dead)) {
+      const [a, b] = c.cards;
+      w[a.rank === b.rank ? 'pairs' : a.suit === b.suit ? 'suited' : 'offsuit'] += c.weight;
+    }
+    return Object.entries(w) as ['pairs' | 'suited' | 'offsuit', number][];
+  }, [range, dead]);
 
   const highlight = useMemo<Set<ComboKey> | null>(() => {
     if (!hover || !analysis) return null;
-    const stat = (analysis.made as Record<string, { combos: ComboKey[] }>)[hover] ?? (analysis.draws as Record<string, { combos: ComboKey[] }>)[hover];
+    const stat =
+      (analysis.made as Record<string, { combos: ComboKey[] }>)[hover] ??
+      (analysis.draws as Record<string, { combos: ComboKey[] }>)[hover];
     return new Set(stat?.combos ?? []);
   }, [hover, analysis]);
 
@@ -228,7 +256,8 @@ export default function RangeLab() {
   const equity = useRangeTask<RangeEquityResult>(
     live > 0 && boardContiguous ? { kind: 'equity', hero: hasHero ? heroCards : null, range, board: boardCards } : null,
   );
-  const tableStreet = boardContiguous && boardCards.length === 3 ? 'turn' : boardContiguous && boardCards.length === 4 ? 'river' : null;
+  const tableStreet =
+    boardContiguous && boardCards.length === 3 ? 'turn' : boardContiguous && boardCards.length === 4 ? 'river' : null;
   const table = useRangeTask<NextCardRow[]>(
     tableStreet && live > 0 ? { kind: 'table', hero: hasHero ? heroCards : null, range, board: boardCards } : null,
   );
@@ -305,14 +334,21 @@ export default function RangeLab() {
     ['stats', t.stats],
     ['streets', t.streets],
   ];
-  const onTab = (x: Tab) => (tab === x ? 'flex' : 'hidden');
-  const onSide = (x: 'stats' | 'streets') => `${onTab(x)} ${side === x ? 'lg:flex' : 'lg:hidden'} xl:flex`;
+  // The turn/river table only exists once there is a flop (or a turn) to deal from.
+  const hasTable = !!tableStreet && live > 0;
+  const shownTabs = hasTable ? tabs : tabs.filter(([id]) => id !== 'streets');
+  const activeTab: Tab = tab === 'streets' && !hasTable ? 'stats' : tab;
+  const activeSide = hasTable ? side : 'stats';
+  const onTab = (x: Tab) => (activeTab === x ? 'flex' : 'hidden');
+  const onSide = (x: 'stats' | 'streets') => `${onTab(x)} ${activeSide === x ? 'lg:flex' : 'lg:hidden'} xl:flex`;
   const cardSize = wide ? 'xs' : 'sm';
 
   const counter = (
     <div className="flex items-baseline gap-2 font-mono tabular-nums">
       <span className="text-lg font-bold text-amber-200 sm:text-xl">{num(live)}</span>
-      <span className="text-xs text-slate-500">/ {num(totalAll)} {t.combos}</span>
+      <span className="text-xs text-slate-500">
+        / {num(totalAll)} {t.combos}
+      </span>
       <span className="text-xs text-slate-400">· {pct(totalAll / TOTAL_COMBOS)}</span>
     </div>
   );
@@ -323,90 +359,46 @@ export default function RangeLab() {
     ['saved', t.saved],
   ];
 
-  const rangePanel = (
-    <Panel
-      className={`${onTab('range')} flex-col gap-3 lg:flex lg:min-h-0 lg:w-[calc(min(46vw,100dvh_-_330px)_+_34px)] xl:w-[calc(min(36vw,100dvh_-_330px)_+_34px)]`}
+  // Shortcuts, text and saved ranges share one box: under the grid on phones, in the right
+  // column from lg so the grid can use the full height.
+  const toolsExpanded = toolsOpen ?? !analysis;
+  const toolsBox = (
+    <div
+      className={`flex min-h-0 shrink-0 flex-col rounded-2xl border border-white/[0.07] bg-black/20 lg:rounded-3xl lg:bg-white/[0.03] ${toolsExpanded ? 'lg:h-[150px]' : ''}`}
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <div role="radiogroup" aria-label={t.paint} className="flex rounded-xl border border-white/10 p-0.5">
-          {(['paint', 'edit'] as const).map((m) => (
-            <button
-              key={m}
-              role="radio"
-              aria-checked={mode === m}
-              onClick={() => setMode(m)}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${mode === m ? 'bg-amber-300/20 text-amber-100' : 'text-slate-400 hover:text-white'}`}
-            >
-              {m === 'paint' ? t.paint : t.edit}
-            </button>
-          ))}
-        </div>
-        <label className="flex min-w-32 flex-1 items-center gap-2 text-xs text-slate-400">
-          {t.weight}
-          <input
-            type="range"
-            min={5}
-            max={100}
-            step={5}
-            value={Math.round(paintWeight * 100)}
-            onChange={(e) => setPaintWeight(Number(e.target.value) / 100)}
-            className="min-w-0 flex-1 accent-amber-400"
-          />
-          <span className="w-9 text-right font-mono text-amber-200">{Math.round(paintWeight * 100)}%</span>
-        </label>
-        <div className="flex gap-1.5">
-          <button onClick={() => commit({})} className={chip}>
-            {t.clear}
+      <div
+        role="tablist"
+        className={`flex gap-1 px-2 pt-1.5 ${toolsExpanded ? 'border-b border-white/[0.06]' : 'pb-0.5'}`}
+      >
+        {toolsTabs.map(([id, label]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={toolsExpanded && toolsTab === id}
+            aria-expanded={toolsExpanded && toolsTab === id}
+            onClick={() => {
+              // Tapping the open tab folds the box; any other tab opens it.
+              setToolsOpen(!(toolsExpanded && toolsTab === id));
+              setToolsTab(id);
+            }}
+            className={`-mb-px border-b-2 px-2.5 pb-1.5 font-mono text-[10px] uppercase tracking-[0.15em] transition ${
+              toolsExpanded && toolsTab === id
+                ? 'border-amber-300 text-amber-200'
+                : 'border-transparent text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            {label}
           </button>
-          <button onClick={() => commit(invertRange(range))} className={chip}>
-            {t.invert}
-          </button>
-          <button onClick={undo} disabled={!history.length} aria-label={t.undo} title={t.undo} className={`${chip} disabled:opacity-40`}>
-            ↶
-          </button>
-        </div>
+        ))}
       </div>
-
-      {/* The grid is as big as the screen height allows */}
-      <div className="w-full">
-        <RangeGrid
-          cells={cells}
-          mode={mode}
-          paintWeight={paintWeight}
-          hasHighlight={!!highlight}
-          onStrokeStart={() => {
-            snapshot();
-            setDraft(null);
-            setSelected(new Set());
-          }}
-          onPaint={(hand, add) => setRange((r) => setHand(r, hand, add ? paintWeight : 0))}
-          onEdit={setEditHand}
-        />
-      </div>
-      <p className="-mt-1 text-[11px] text-slate-500 lg:hidden">{t.paintHint}</p>
-
-      {/* Shortcuts, text and saved ranges share one box */}
-      <div className="flex min-h-0 flex-col rounded-2xl border border-white/[0.07] bg-black/20 lg:h-[150px]">
-        <div role="tablist" className="flex gap-1 border-b border-white/[0.06] px-2 pt-1.5">
-          {toolsTabs.map(([id, label]) => (
-            <button
-              key={id}
-              role="tab"
-              aria-selected={toolsTab === id}
-              onClick={() => setToolsTab(id)}
-              className={`-mb-px border-b-2 px-2.5 pb-1.5 font-mono text-[10px] uppercase tracking-[0.15em] transition ${
-                toolsTab === id ? 'border-amber-300 text-amber-200' : 'border-transparent text-slate-500 hover:text-slate-300'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+      {toolsExpanded && (
         <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
           {toolsTab === 'shortcuts' && (
             <div className="flex flex-col gap-2.5">
               <label className="flex items-center gap-3 text-sm">
-                <span className="min-w-9 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500">{t.top}</span>
+                <span className="min-w-9 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500">
+                  {t.top}
+                </span>
                 <input
                   type="range"
                   min={0}
@@ -427,7 +419,9 @@ export default function RangeLab() {
                 <span className="w-12 text-right font-mono tabular-nums text-amber-200">{topPct}%</span>
               </label>
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="min-w-9 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500">{t.groups}</span>
+                <span className="min-w-9 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500">
+                  {t.groups}
+                </span>
                 <button onClick={() => addHands(GROUPS.pairs)} className={chip}>
                   {t.pairs}
                 </button>
@@ -439,7 +433,9 @@ export default function RangeLab() {
                 </button>
               </div>
               <div className="flex flex-wrap items-center gap-1.5" title={t.presetsNote}>
-                <span className="min-w-9 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500">6-max</span>
+                <span className="min-w-9 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500">
+                  6-max
+                </span>
                 {(Object.keys(PRESETS) as PresetId[]).map((id) => (
                   <button key={id} onClick={() => commit(presetRange(id))} className={chip}>
                     {PRESET_LABELS[id]}
@@ -535,7 +531,79 @@ export default function RangeLab() {
             </div>
           )}
         </div>
+      )}
+    </div>
+  );
+
+  const rangePanel = (
+    <Panel
+      className={`${onTab('range')} flex-col gap-3 lg:flex lg:min-h-0 lg:w-[calc(min(46vw,100dvh_-_190px)_+_34px)] ${hasTable ? 'xl:w-[calc(min(36vw,100dvh_-_190px)_+_34px)]' : 'xl:w-[calc(min(46vw,100dvh_-_190px)_+_34px)]'}`}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <div role="radiogroup" aria-label={t.paint} className="flex rounded-xl border border-white/10 p-0.5">
+          {(['paint', 'edit'] as const).map((m) => (
+            <button
+              key={m}
+              role="radio"
+              aria-checked={mode === m}
+              onClick={() => setMode(m)}
+              className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${mode === m ? 'bg-amber-300/20 text-amber-100' : 'text-slate-400 hover:text-white'}`}
+            >
+              {m === 'paint' ? t.paint : t.edit}
+            </button>
+          ))}
+        </div>
+        <label className="flex min-w-32 flex-1 items-center gap-2 text-xs text-slate-400">
+          {t.weight}
+          <input
+            type="range"
+            min={5}
+            max={100}
+            step={5}
+            value={Math.round(paintWeight * 100)}
+            onChange={(e) => setPaintWeight(Number(e.target.value) / 100)}
+            className="min-w-0 flex-1 accent-amber-400"
+          />
+          <span className="w-9 text-right font-mono text-amber-200">{Math.round(paintWeight * 100)}%</span>
+        </label>
+        <div className="flex gap-1.5">
+          <button onClick={() => commit({})} className={chip}>
+            {t.clear}
+          </button>
+          <button onClick={() => commit(invertRange(range))} className={chip}>
+            {t.invert}
+          </button>
+          <button
+            onClick={undo}
+            disabled={!history.length}
+            aria-label={t.undo}
+            title={t.undo}
+            className={`${chip} disabled:opacity-40`}
+          >
+            ↶
+          </button>
+        </div>
       </div>
+
+      {/* The grid is as big as the screen height allows */}
+      <div className="w-full">
+        <RangeGrid
+          cells={cells}
+          mode={mode}
+          paintWeight={paintWeight}
+          hasHighlight={!!highlight}
+          onStrokeStart={() => {
+            snapshot();
+            setDraft(null);
+            setSelected(new Set());
+          }}
+          onPaint={(hand, add) => setRange((r) => setHand(r, hand, add ? paintWeight : 0))}
+          onEdit={setEditHand}
+        />
+      </div>
+      <p className="-mt-1 text-[11px] text-slate-500 lg:hidden">{t.paintHint}</p>
+
+      <div className="lg:hidden">{toolsBox}</div>
     </Panel>
   );
 
@@ -597,7 +665,9 @@ export default function RangeLab() {
           <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-amber-300/80">{t.equity}</p>
           <p className="truncate text-xs text-slate-300">{hasHero ? t.heroVsRange : t.rangeVsRandom}</p>
         </div>
-        <span className="font-mono text-2xl font-bold tabular-nums text-white">{live > 0 && eq ? pct(eq.equity) : '—'}</span>
+        <span className="font-mono text-2xl font-bold tabular-nums text-white">
+          {live > 0 && eq ? pct(eq.equity) : '—'}
+        </span>
         <div className="min-w-0 flex-1">
           <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
             <div
@@ -617,68 +687,78 @@ export default function RangeLab() {
     </section>
   );
 
-  const statsPanel = (
+  // On a flop: strong / medium / draws / air. Preflop: what the range is made of.
+  const segments: Segment[] = analysis
+    ? (['strong', 'medium', 'draws', 'air'] as const).map((g) => ({
+        key: g,
+        label: GROUP_LABELS[lang][g],
+        color: GROUP_COLORS[g],
+        weight: analysis.groups[g],
+      }))
+    : composition.map(([key, weight], i) => ({
+        key,
+        label: key === 'pairs' ? t.pairs : key === 'suited' ? t.suited : t.offsuit,
+        color: ['#fbbf24', '#22e4ff', '#a855f7'][i],
+        weight,
+      }));
+  const distribution = (
+    <Distribution
+      className={`${onTab('stats')} lg:flex`}
+      eyebrow={analysis ? `${t.distribution} · ${street}` : `${t.composition} · Preflop`}
+      title={`${num(live)} ${t.combos}`}
+      segments={segments}
+      empty={t.emptyRange}
+    />
+  );
+
+  const statsPanel = analysis && live > 0 && (
     <Panel className={`${onSide('stats')} min-h-0 flex-1 flex-col lg:overflow-y-auto`}>
-      {live === 0 ? (
-        <p className="text-sm text-slate-400">{t.emptyRange}</p>
-      ) : !analysis ? (
-        <p className="text-sm text-slate-400">{t.needFlop}</p>
-      ) : (
-        <StatsPanel
-          analysis={analysis}
-          equity={equity.busy ? null : eq}
-          hasHero={hasHero}
-          selected={selected}
-          onToggle={toggle}
-          onHover={setHover}
-          onFilter={applyFilter}
-        />
-      )}
+      <StatsPanel
+        analysis={analysis}
+        equity={equity.busy ? null : eq}
+        hasHero={hasHero}
+        selected={selected}
+        onToggle={toggle}
+        onHover={setHover}
+        onFilter={applyFilter}
+      />
     </Panel>
   );
 
-  const streetsPanel = (
+  const streetsPanel = hasTable && (
     <Panel className={`${onSide('streets')} min-h-0 flex-1 flex-col`}>
-      {tableStreet && live > 0 ? (
-        table.result ? (
-          <StreetTable
-            rows={table.result}
-            street={tableStreet}
-            busy={table.busy}
-            onPick={(card) => setSlot({ kind: 'board', i: boardCards.length }, card)}
-          />
-        ) : (
-          <p className="flex items-center gap-2 text-sm text-slate-400">
-            <span className="h-2 w-2 animate-ping rounded-full bg-amber-300" />
-            {t.calculating}
-          </p>
-        )
+      {table.result ? (
+        <StreetTable
+          rows={table.result}
+          street={tableStreet}
+          busy={table.busy}
+          onPick={(card) => setSlot({ kind: 'board', i: boardCards.length }, card)}
+        />
       ) : (
-        <p className="text-sm text-slate-400">{t.needFlopTable}</p>
+        <p className="flex items-center gap-2 text-sm text-slate-400">
+          <span className="h-2 w-2 animate-ping rounded-full bg-amber-300" />
+          {t.calculating}
+        </p>
       )}
     </Panel>
   );
 
   return (
     <div className="relative mx-auto flex min-h-dvh max-w-[1700px] flex-col gap-3 px-4 py-4 sm:px-6 lg:h-dvh lg:overflow-hidden lg:py-3">
-      <ToolHeader
-        title={TOOL.text[lang].name}
-        index="05"
-        actions={<div className="hidden lg:block">{counter}</div>}
-      />
+      <ToolHeader title={TOOL.text[lang].name} index="05" actions={<div className="hidden lg:block">{counter}</div>} />
 
       {/* Phones and tablets: sticky combo counter and tabs */}
       <div className="sticky top-0 z-30 -mx-4 flex flex-col gap-2 border-b border-white/[0.06] bg-void/85 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6 lg:hidden">
         {counter}
-        <div role="tablist" className="grid grid-cols-4 gap-1">
-          {tabs.map(([id, label]) => (
+        <div role="tablist" className={`grid gap-1 ${hasTable ? 'grid-cols-4' : 'grid-cols-3'}`}>
+          {shownTabs.map(([id, label]) => (
             <button
               key={id}
               role="tab"
-              aria-selected={tab === id}
+              aria-selected={activeTab === id}
               onClick={() => setTab(id)}
               className={`rounded-lg px-1 py-1.5 text-xs font-semibold transition ${
-                tab === id ? 'bg-amber-300/20 text-amber-100 shadow-[0_0_14px_-6px_#fbbf24]' : 'text-slate-400'
+                activeTab === id ? 'bg-amber-300/20 text-amber-100 shadow-[0_0_14px_-6px_#fbbf24]' : 'text-slate-400'
               }`}
             >
               {label}
@@ -687,19 +767,26 @@ export default function RangeLab() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[auto_minmax(0,1fr)] xl:grid-cols-[auto_minmax(0,1fr)_minmax(0,0.85fr)]">
+      <div
+        className={`flex flex-col gap-3 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[auto_minmax(0,1fr)] ${hasTable ? 'xl:grid-cols-[auto_minmax(0,1fr)_minmax(0,0.85fr)]' : ''}`}
+      >
         {rangePanel}
         <div className="flex min-h-0 flex-col gap-3">
           {boardPanel}
+          {distribution}
+          <div className="hidden lg:contents">{toolsBox}</div>
           {/* lg only: stats and turn/river take turns in this column */}
-          <div role="tablist" className="hidden shrink-0 grid-cols-2 gap-1 rounded-xl border border-white/10 p-0.5 lg:grid xl:hidden">
+          <div
+            role="tablist"
+            className={`hidden shrink-0 grid-cols-2 gap-1 rounded-xl border border-white/10 p-0.5 xl:hidden ${hasTable ? 'lg:grid' : ''}`}
+          >
             {(['stats', 'streets'] as const).map((id) => (
               <button
                 key={id}
                 role="tab"
-                aria-selected={side === id}
+                aria-selected={activeSide === id}
                 onClick={() => setSide(id)}
-                className={`rounded-lg py-1 text-xs font-semibold transition ${side === id ? 'bg-amber-300/20 text-amber-100' : 'text-slate-400 hover:text-white'}`}
+                className={`rounded-lg py-1 text-xs font-semibold transition ${activeSide === id ? 'bg-amber-300/20 text-amber-100' : 'text-slate-400 hover:text-white'}`}
               >
                 {id === 'stats' ? t.stats : t.streets}
               </button>
@@ -708,7 +795,7 @@ export default function RangeLab() {
           {statsPanel}
           <div className="contents xl:hidden">{streetsPanel}</div>
         </div>
-        <div className="hidden min-h-0 flex-col xl:flex">{streetsPanel}</div>
+        {hasTable && <div className="hidden min-h-0 flex-col xl:flex">{streetsPanel}</div>}
       </div>
 
       <p className="hidden shrink-0 text-center font-mono text-[10px] uppercase tracking-[0.15em] text-slate-600 lg:block">
@@ -717,7 +804,11 @@ export default function RangeLab() {
 
       {picking && (
         <CardPicker
-          title={picking.kind === 'board' ? `${t.table} · ${BOARD_LABELS[picking.i]}` : `${t.hero} · ${t.card} ${picking.i + 1}`}
+          title={
+            picking.kind === 'board'
+              ? `${t.table} · ${BOARD_LABELS[picking.i]}`
+              : `${t.hero} · ${t.card} ${picking.i + 1}`
+          }
           current={(picking.kind === 'board' ? board : hero)[picking.i]}
           used={usedElsewhere}
           onPick={pick}
